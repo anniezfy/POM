@@ -1,0 +1,62 @@
+cd build
+LLVM_DIR=/home/jason/Hope/scalehls/build/lib/cmake/llvm \
+MLIR_DIR=/home/jason/Hope/scalehls/build/lib/cmake/mlir \
+cmake -G Ninja .. -DMLIR_DIR=../scalehls/build/lib/cmake/mlir \
+ -DLLVM_EXTERNAL_LIT=/home/jason/Hope/scalehls/build/bin/llvm-lit
+cmake --build . --target test
+cmake --build . --target wrapper
+
+
+
+
+../scalehls/build/bin/scalehls-opt ../samples/bicg.mlir\
+    --scalehls-legalize-to-hlscpp="top-func=bicg" \
+    --cse -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg.cpp
+
+
+../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
+    --scalehls-legalize-to-hlscpp="top-func=gemm" \
+    --cse -canonicalize \
+    --scalehls-materialize-reduction \
+    --scalehls-promote-buffer \
+    --scalehls-reduce-initial-interval \
+    --scalehls-simplify-affine-if \
+    --scalehls-affine-store-forward \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
+
+
+../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
+    --scalehls-legalize-to-hlscpp="top-func=bicg" \
+    --cse -canonicalize \
+    --scalehls-materialize-reduction \
+    --scalehls-promote-buffer \
+    --scalehls-reduce-initial-interval \
+    --scalehls-simplify-affine-if \
+    --scalehls-affine-store-forward \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
+
+
+
+    /home/jason/Hope/scalehls/build/bin/scalehls-opt test_bicg.mlir -debug-only=scalehls \
+    --scalehls-dse-pipeline="top-func=test_bicg target-spec=../config.json" \
+    | /home/jason/Hope/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_bicg_dse.cpp
+
+    /home/jason/Hope/scalehls/polygeist/build/bin/mlir-clang test_gemm.c -function=test_gemm -S \
+    -memref-fullrank -raise-scf-to-affine > test_gemm.mlir
+
+
+    /home/jason/Hope/scalehls/build/bin/scalehls-opt test_gemm.mlir -debug-only=scalehls \
+    --scalehls-dse-pipeline="top-func=test_gemm target-spec=../config.json" \
+    | /home/jason/Hope/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_gemm.cpp
+
+
+/home/jason/Hope/scalehls/polygeist/build/bin/mlir-clang test_syrk.c -function=test_syrk -S \
+    -memref-fullrank -raise-scf-to-affine > test_syrk.mlir
+    
+
+        /home/jason/Hope/scalehls/polygeist/build/bin/mlir-clang test_bicg.c -function=test_bicg -S \
+    -memref-fullrank -raise-scf-to-affine > test_bicg.mlir
