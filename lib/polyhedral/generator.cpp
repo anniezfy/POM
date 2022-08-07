@@ -3,7 +3,7 @@
 #include <iostream>
 #include "scalehls/Transforms/Passes.h"
 #include "scalehls/Transforms/Utils.h"
-#include "scalehls/Transforms/QoREstimation.h"
+#include "scalehls/Transforms/Estimator.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
 #include "mlir/Dialect/Affine/IR/AffineValueMap.h"
@@ -2218,7 +2218,7 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     
     // mlir::scalehls::applyAutoArrayPartition(manager.funcs[0]);
     for(auto &kv: fct.get_partition_map()){
-        SmallVector<mlir::scalehls::hlscpp::PartitionKind, 4> kinds;
+        SmallVector<mlir::scalehls::hls::PartitionKind, 4> kinds;
         SmallVector<unsigned, 4> factors;
         for(auto &factor: std::get<1>(kv)){
             factors.push_back(factor);
@@ -2226,26 +2226,26 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
         }
         for(auto &type: std::get<2>(kv)){
             if(type == "cyclic"){
-                kinds.push_back(mlir::scalehls::hlscpp::PartitionKind::CYCLIC);
+                kinds.push_back(mlir::scalehls::hls::PartitionKind::CYCLIC);
             }else if(type == "block"){
-                kinds.push_back(mlir::scalehls::hlscpp::PartitionKind::BLOCK);
+                kinds.push_back(mlir::scalehls::hls::PartitionKind::BLOCK);
             }else if(type == "none"){
-                kinds.push_back(mlir::scalehls::hlscpp::PartitionKind::NONE);
+                kinds.push_back(mlir::scalehls::hls::PartitionKind::NONE);
             }
             // std::cout<<type<<std::endl;
         }
         
         // std::cout<<factors<<std::endl;
         mlir::scalehls::applyArrayPartition(map[std::get<0>(kv)], factors, kinds,/*updateFuncSignature=*/true);
-        // mlir::scalehls::applyLegalizeToHLSCpp(manager.get_funcs()[0], true,true);
+        // mlir::scalehls::applyLegalizeTohls(manager.get_funcs()[0], true,true);
         // manager.getModule().dump();
 
     }
 
 
-    // mlir::scalehls::applyLegalizeToHLSCpp(manager.get_funcs()[0], true,true);
+    // mlir::scalehls::applyLegalizeTohls(manager.get_funcs()[0], true,true);
                 
-     for(auto &comp: fct.leader_computations){
+    for(auto &comp: fct.leader_computations){
         if(comp->is_unrolled == true){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
                 int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
@@ -2261,7 +2261,7 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
             
         }
 
-     }
+    }
     // mlir::loopUnrollFull(manager.ops[1]);
     // manager.getModule().dump();
     // mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
@@ -2270,7 +2270,7 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
 
     // Read target specification JSON file.
     std::string errorMessage;
-    auto configFile = mlir::openInputFile("/home/jason/Hope/lib/Polyhedral/config.json", &errorMessage);
+    auto configFile = mlir::openInputFile("/home/POM/samples/config.json", &errorMessage);
     if (!configFile) {
       llvm::errs() << errorMessage << "\n";
     //   return mlir::Pass::signalPassFailure();
@@ -2342,7 +2342,7 @@ void gen_mlir(polyfp::function &fct, isl_ast_node *node, int &level){
     // context.getOrLoadDialect<mlir::StandardOpsDialect>();
     context.getOrLoadDialect<mlir::math::MathDialect>();
     context.getOrLoadDialect<mlir::memref::MemRefDialect>();
-    context.getOrLoadDialect<mlir::scalehls::HLSCppDialect>();
+    context.getOrLoadDialect<mlir::scalehls::HLSDialect>();
     mlir::OwningOpRef<mlir::ModuleOp> module = mlirGen2(context, fct, node, level);
     mlir::verify(*module);
     if (failed(mlir::verify(*module))) {
@@ -2353,7 +2353,7 @@ void gen_mlir(polyfp::function &fct, isl_ast_node *node, int &level){
     // module->dump();
     std::error_code error;
     std::string s = fct.get_name();
-    std::string path = "/home/jason/Hope/samples/"+s+".mlir";
+    std::string path = "/home/POM/samples/"+s+".mlir";
     llvm::raw_fd_ostream os(path, error);
     os << *module;
         

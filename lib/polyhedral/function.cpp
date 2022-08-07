@@ -1267,7 +1267,7 @@ void polyfp::function::dump_schedule(std::string path){
     context.getOrLoadDialect<mlir::LLVM::LLVMDialect>();
     context.getOrLoadDialect<mlir::math::MathDialect>();
     context.getOrLoadDialect<mlir::memref::MemRefDialect>();
-    context.getOrLoadDialect<mlir::scalehls::HLSCppDialect>();
+    context.getOrLoadDialect<mlir::scalehls::HLSDialect>();
 
     
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);
@@ -1359,7 +1359,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
     context.getOrLoadDialect<mlir::LLVM::LLVMDialect>();
     context.getOrLoadDialect<mlir::math::MathDialect>();
     context.getOrLoadDialect<mlir::memref::MemRefDialect>();
-    context.getOrLoadDialect<mlir::scalehls::HLSCppDialect>();
+    context.getOrLoadDialect<mlir::scalehls::HLSDialect>();
 
     
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);

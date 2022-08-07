@@ -25,7 +25,7 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  project(polyhls LANGUAGES CXX C)
+  project(POM LANGUAGES CXX C)
   # llvm
   set(LLVM_SOURCE_DIR ${PROJECT_SOURCE_DIR}/scalehls/polygeist/llvm-project/llvm)
   find_package(MLIR REQUIRED CONFIG)
@@ -53,11 +53,11 @@ else ()
   message(STATUS "Using MLIR_MAIN_SRC_DIR in: ${MLIR_MAIN_SRC_DIR}")
 endif()
 
-# include_directories("/home/jason/PolyHLS/third_party/llvm-project/mlir/include/mlir/IR")
-set(POLYHLS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(POLYHLS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(POLYHLS_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include )
-set(POLYHLS_TOOLS_DIR ${CMAKE_BINARY_DIR}/bin)
+# include_directories("/home/POM/third_party/llvm-project/mlir/include/mlir/IR")
+set(POM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(POM_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(POM_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include )
+set(POM_TOOLS_DIR ${CMAKE_BINARY_DIR}/bin)
 
 
 list(APPEND CMAKE_MODULE_PATH "${MLIR_MAIN_SRC_DIR}/cmake/modules")
@@ -76,9 +76,10 @@ add_definitions(${LLVM_DEFINITIONS})
 #set(ISL_INCLUDE_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/isl/build/include/ CACHE PATH #"Path to ISL include directory")
 #set(ISL_LIB_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/isl/build/.lib/ CACHE PATH "Path to #ISL library directory")
 
-include_directories(${PROJECT_SOURCE_DIR}/include/Polyhedral)
-include_directories(${PROJECT_SOURCE_DIR}/lib/Polyhedral)
+include_directories(${PROJECT_SOURCE_DIR}/include/polyhedral)
+include_directories(${PROJECT_SOURCE_DIR}/lib/polyhedral)
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/testbench)
 include_directories(${PROJECT_SOURCE_DIR}/scalehls/polygeist/llvm-project/mlir/include)
 include_directories(${PROJECT_SOURCE_DIR}/scalehls/polygeist/llvm-project/llvm/include)
 include_directories(${PROJECT_SOURCE_DIR}/scalehls/build/tools/scalehls/include)
@@ -99,29 +100,32 @@ get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 get_property(translation_libs GLOBAL PROPERTY MLIR_TRANSLATION_LIBS)
 
-find_library(MLIRHLSCpp MLIRHLSCpp PATHS /home/jason/Hope/scalehls/build/lib)
-message(STATUS "Using MLIRHLSCpp in: ${MLIRHLSCpp}")
 
-find_library(MLIRScaleHLSSupport MLIRScaleHLSSupport PATHS /home/jason/Hope/scalehls/build/lib)
-message(STATUS "Using MLIRHLSCpp in: ${MLIRScaleHLSSupport}")
+# find_library(MLIRSCF NAMES libMLIRSCF.a PATHS ${PROJECT_SOURCE_DIR}/scalehls/build/lib)
+# message(STATUS "Using MLIRSCF in: ${MLIRSCF}")
 
-find_library(MLIRScaleHLSTransforms MLIRScaleHLSTransforms PATHS /home/jason/Hope/scalehls/build/lib)
-message(STATUS "Using MLIRHLSCpp in: ${MLIRScaleHLSTransforms}")
+find_library(MLIRHLS MLIRHLS PATHS ${PROJECT_SOURCE_DIR}/scalehls/build/lib)
+message(STATUS "Using MLIRHLS in: ${MLIRHLS}")
+
+find_library(MLIRScaleHLSSupport MLIRScaleHLSSupport PATHS ${PROJECT_SOURCE_DIR}/scalehls/build/lib)
+message(STATUS "Using MLIRScaleHLSSupport in: ${MLIRScaleHLSSupport}")
+
+find_library(MLIRScaleHLSTransforms MLIRScaleHLSTransforms PATHS ${PROJECT_SOURCE_DIR}/scalehls/build/lib)
+message(STATUS "Using MLIRScaleHLSSupport in: ${MLIRScaleHLSTransforms}")
 # 生成可执行文件
 
-
-file(GLOB mains RELATIVE 
-"${PROJECT_SOURCE_DIR}" 
-test.cpp
-bicg.cpp
-gemm.cpp
-syrk.cpp
+set(TEST_SOURCE_DIR ${PROJECT_SOURCE_DIR}/testbench)
+file(GLOB_RECURSE  mains RELATIVE 
+"${TEST_SOURCE_DIR}" 
+"${TEST_SOURCE_DIR}/*.cpp"
 )
+message(STATUS "Using TEST_SOURCE_DIR in:${TEST_SOURCE_DIR}")
 # 循环遍历每个含main的文件，分别编译生成exe文件
 foreach(mainfile IN LISTS mains)
     # Get file name without directory
     get_filename_component(mainname ${mainfile} NAME_WE)
-    add_executable(${mainname} ${mainfile})
+    # message(STATUS "get mainname in:${mainname}")
+    add_executable(${mainname} ${TEST_SOURCE_DIR}/${mainfile})
     # 添加库文件目录
     target_link_libraries(${mainname} Functions)
     target_link_libraries(${mainname} ${ISLLib})
@@ -131,7 +135,7 @@ foreach(mainfile IN LISTS mains)
         ${translation_libs}
         ${MLIRScaleHLSTransforms}
         ${MLIRScaleHLSSupport}
-        ${MLIRHLSCpp}
+        ${MLIRHLS}
         MLIRAffineTransforms
         MLIROptLib
         MLIRAnalysis
@@ -175,7 +179,7 @@ add_subdirectory(lib)
 #add_subdirectory(test)
 #add_subdirectory(standalone-opt)
 #add_subdirectory(standalone-translate)
-#add_subdirectory(polyhls-isl)
+#add_subdirectory(POM-isl)
 # add_subdirectory(pybind11)
 
 

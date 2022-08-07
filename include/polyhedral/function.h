@@ -21,7 +21,7 @@
 
 #include "scalehls/Transforms/Passes.h"
 #include "scalehls/Transforms/Utils.h"
-#include "scalehls/Transforms/QoREstimation.h"
+#include "scalehls/Transforms/Estimator.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
@@ -39,9 +39,7 @@
 #include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
-// #include "mlir/IR/IntegerSet.h"
-// #include "mlir/IR/BuiltinOps.h"
-// #include "mlir/IR/BuiltinTypes.h"
+
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Verifier.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"

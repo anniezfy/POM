@@ -57,7 +57,7 @@ int main(){
 
     // A.partition({4,4},"cyclic");
     // s_2.after(s_1,j);
-    fct->auto_DSE("/home/jason/Hopemples/gemm/");
+    // fct->auto_DSE(" /home/POM/samples/gemm/");
     
     codegen();
     

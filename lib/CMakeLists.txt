@@ -1,4 +1,4 @@
-add_subdirectory(Polyhedral)
-add_subdirectory(CAPI)
-add_subdirectory(Standalone)
+add_subdirectory(polyhedral)
+# add_subdirectory(CAPI)
+# add_subdirectory(Standalone)
 # add_subdirectory(hello)
