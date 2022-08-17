@@ -108,12 +108,23 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                     std::cout<<"isl_ast_op_sub "<<std::endl;
                     isl_ast_expr *expr0 = isl_ast_expr_get_op_arg(expr_itr, 0);
                     isl_ast_expr *expr1 = isl_ast_expr_get_op_arg(expr_itr, 1);
-                    int add1;
+                    int sub1;
                     if (isl_ast_expr_get_type(expr0) == isl_ast_expr_id)
-                    {//TODO: find right dimensions
+                    {//TODO: find right dimensions: use start_loops_position
                         isl_id *identifier = isl_ast_expr_get_id(expr0);
                         std::string name_str(isl_id_get_name(identifier));
                         int loc;
+                        int index = 0;
+                        for(int i=0; i<start_loops_position.size(); i++){
+                            if(start_loops_position[i]>level){
+                                index = start_loops_position[i-1];
+                                break;
+                            }
+                            if(i == start_loops_position.size()-1 ){
+                                index = start_loops_position[i];
+                                break;
+                            }
+                        }
                         for (auto &kv4: name_map){
                             if(name_str==kv4.second){
                                 loc = kv4.first;
@@ -121,18 +132,20 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                         }
                         
 
-                        mlir::Value value = ops[loc].getInductionVar();
+                        mlir::Value value = ops[loc+index].getInductionVar();
                         lb_values.push_back(value);
                         
                         isl_id_free(identifier);
-                    }  
+                    }else if(isl_ast_expr_get_type(expr0) == isl_ast_op_div){
+
+                    }
                     if (isl_ast_expr_get_type(expr1) == isl_ast_expr_int)
                     {   
-                        add1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1))+1;
+                        sub1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1))+1;
                     }  
                     //TODO: find right dimensions
                     // args.push_back(builder.getAffineDimExpr(0) + isl_val_get_num_si(isl_ast_expr_get_val(expr_itr)));
-                    lb_args.push_back(builder.getAffineDimExpr(0) - add1);
+                    lb_args.push_back(builder.getAffineDimExpr(0) - sub1);
                     
                 }
                 // else if (isl_ast_expr_get_type(expr_itr) == isl_ast_expr_id){
@@ -194,8 +207,8 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             // }
             int nb = isl_ast_expr_get_op_n_arg(cond_upper);
             int sub1;
-            // std::cout<<"number of args: ";
-            // std::cout<<nb<<std::endl;
+            std::cout<<"number of args: ";
+            std::cout<<nb<<std::endl;
 
             for(int i=0;i<nb;i++)
             {   
@@ -203,37 +216,37 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 if (isl_ast_expr_get_type(expr_itr) == isl_ast_expr_int){
                     ub_args.push_back(getAffineConstantExpr(isl_val_get_num_si(isl_ast_expr_get_val(expr_itr))+1, builder.getContext()));
                 }
-                // else if (isl_ast_expr_get_op_type(expr_itr) == isl_ast_op_sub){
-                //     std::cout<<"isl_ast_op_sub "<<std::endl;
-                //     isl_ast_expr *expr0 = isl_ast_expr_get_op_arg(expr_itr, 0);
-                //     isl_ast_expr *expr1 = isl_ast_expr_get_op_arg(expr_itr, 1);
-                //     int add1;
-                //     if (isl_ast_expr_get_type(expr0) == isl_ast_expr_id)
-                //     {//TODO: find right dimensions
-                //         isl_id *identifier = isl_ast_expr_get_id(expr0);
-                //         std::string name_str(isl_id_get_name(identifier));
-                //         int loc;
-                //         for (auto &kv4: name_map){
-                //             if(name_str==kv4.second){
-                //                 loc = kv4.first;
-                //             }
-                //         }
+                else if (isl_ast_expr_get_op_type(expr_itr) == isl_ast_op_sub){
+                    std::cout<<"isl_ast_op_sub "<<std::endl;
+                    isl_ast_expr *expr0 = isl_ast_expr_get_op_arg(expr_itr, 0);
+                    isl_ast_expr *expr1 = isl_ast_expr_get_op_arg(expr_itr, 1);
+                    int add1;
+                    if (isl_ast_expr_get_type(expr0) == isl_ast_expr_id)
+                    {//TODO: find right dimensions
+                        isl_id *identifier = isl_ast_expr_get_id(expr0);
+                        std::string name_str(isl_id_get_name(identifier));
+                        int loc;
+                        for (auto &kv4: name_map){
+                            if(name_str==kv4.second){
+                                loc = kv4.first;
+                            }
+                        }
                         
 
-                //         mlir::Value value = ops[loc].getInductionVar();
-                //         lb_values.push_back(value);
+                        mlir::Value value = ops[loc].getInductionVar();
+                        ub_values.push_back(value);
                         
-                //         isl_id_free(identifier);
-                //     }  
-                //     if (isl_ast_expr_get_type(expr1) == isl_ast_expr_int)
-                //     {   
-                //         add1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1))+1;
-                //     }  
-                //     //TODO: find right dimensions
-                //     // args.push_back(builder.getAffineDimExpr(0) + isl_val_get_num_si(isl_ast_expr_get_val(expr_itr)));
-                //     lb_args.push_back(builder.getAffineDimExpr(0) - add1);
+                        isl_id_free(identifier);
+                    }  
+                    if (isl_ast_expr_get_type(expr1) == isl_ast_expr_int)
+                    {   
+                        add1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1))+1;
+                    }  
+                    //TODO: find right dimensions
+                    // args.push_back(builder.getAffineDimExpr(0) + isl_val_get_num_si(isl_ast_expr_get_val(expr_itr)));
+                    ub_args.push_back(builder.getAffineDimExpr(0) - add1);
                     
-                // }
+                }
                 else if (isl_ast_expr_get_type(expr_itr) == isl_ast_expr_id){
                     isl_id *identifier = isl_ast_expr_get_id(expr_itr);
                     std::string name_str(isl_id_get_name(identifier));
@@ -504,7 +517,6 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
 
         }
         // std::cout<<"The loop dump"<<std::endl;
-        theModule->dump();
         isl_ast_expr_free(init);
         isl_ast_expr_free(cond);
         isl_ast_expr_free(inc);
@@ -533,7 +545,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         }
     }else if (isl_ast_node_get_type(node) == isl_ast_node_block)
     {
-        // std::cout<<"enter a block node"<<std::endl;
+        std::cout<<"enter a block node"<<std::endl;
         isl_ast_node_list *list = isl_ast_node_block_get_children(node);
         // std::cout<<" block size:"+std::to_string(isl_ast_node_list_n_ast_node(list) - 1)<<std::endl;
         int current_level = level;
@@ -543,12 +555,13 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             isl_ast_node *child = isl_ast_node_list_get_ast_node(list, i);
             // childs.push_back(child);
             if (isl_ast_node_get_type(child) == isl_ast_node_user){
-                // std::cout<<"a user block"<<std::endl;
+                std::cout<<"a user block"<<std::endl;
 
                 // builder.setInsertionPointToEnd(ops[level-1].getBody());
-                
+                theModule.dump();
                 mlirGen1(fct,child,current_level,false,true,if_flag);
-                
+                std::cout<<"after"<<std::endl;
+
                 // if(i == isl_ast_node_list_n_ast_node(list) - 1){
                 //     builder.setInsertionPointAfter(ops[level-1]);
                 // }
@@ -558,7 +571,8 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 //  mlirGen1(fct,childs[1],level);
             }else if (isl_ast_node_get_type(child) == isl_ast_node_for){
                 // builder.setInsertionPointToEnd(ops[level-1].getBody());
-                // std::cout<<"a for block"<<std::endl;
+                std::cout<<"a for block"<<std::endl;
+                theModule.dump();
                 
                 if(this->ops.size() != 0){
                     level = level + 1 ;
@@ -597,8 +611,8 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 //  if(i == isl_ast_node_list_n_ast_node(list) - 1){
                 //     builder.setInsertionPointAfter(ops[level-1]);
                 //  }
-                //  std::cout<<"a for"<<std::endl;
-                //  theModule.dump();
+                 std::cout<<"after"<<std::endl;
+                 theModule.dump();
 
                 //  mlirGen1(fct,childs[1],level);
             }else if (isl_ast_node_get_type(child) == isl_ast_node_block){
@@ -632,12 +646,13 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
     {
         bool flag = true;
         std::cout<<"enter a user node"<<std::endl;
+        theModule.dump();
         
         isl_ast_expr *expr = isl_ast_node_user_get_expr(node);
         isl_ast_expr *arg = isl_ast_expr_get_op_arg(expr, 0);
         isl_id *id = isl_ast_expr_get_id(arg);
         std::string computation_name(isl_id_get_name(id));
-        std::cout<<"computation_name"+computation_name<<std::endl;
+        // std::cout<<"computation_name"+computation_name<<std::endl;
         isl_id_free(id);
         polyfp::compute *comp;
         int dim_number = 0;
@@ -657,7 +672,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         auto polyfp_expr = comp->get_expr();
         
         std::string p_name = comp->get_placeholder()->get_name();
-        std::cout<<"p_name"+p_name<<std::endl;
+        // std::cout<<"p_name"+p_name<<std::endl;
         int index_placeholder;
         int index_argument;
         for(int i=0; i<argument_list.size(); i++){
@@ -675,7 +690,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         SmallVector<mlir::AffineExpr> placeholder_index_args;
 
 
-        theModule.dump();
+        // theModule.dump();
         bool placeholder_index_flag = false;
         int count = 0;
         for (auto &kv: comp->get_placeholder_dims()){
@@ -733,7 +748,8 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
 
                         }
                     }
-                   // Jason: loc = loc + loop position
+                    
+                   // TODO: loc = loc + loop position
                     mlir::Value value = ops[loc].getInductionVar();
                     std::cout<<loc<<std::endl;
                     if ( std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value)== placeholder_index_values.end() ){
@@ -776,21 +792,32 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                     
 
                 }else{
-                    std::cout<<"22222222222222222222222"<<std::endl;
+
                     loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
 
 
                     //zhe li location = 0
-                    // std::cout<<"else there"<<std::endl;
-                    // std::cout<<"the location is : "+std::to_string(comp->get_loop_level_number_from_dimension_name(kv2.second))<<std::endl;
-                    
-                    mlir::Value value = ops[comp->get_loop_level_number_from_dimension_name(kv.get_name())].getInductionVar();
-                    std::cout<<"dimension"+std::to_string(comp->get_loop_level_number_from_dimension_name(kv.get_name()))<<std::endl;
+                    // TODO find the right location
+                    int loc;
+                    int index = 0;
+                    for(int i=0; i<start_loops_position.size(); i++){
+                        if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
+                            index = start_loops_position[i-1];
+                            break;
+                        }
+                        if(i == start_loops_position.size()-1 ){
+                            index = start_loops_position[i];
+                            break;
+                        }
+                    }
+                    loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
+                    mlir::Value value = ops[loc+index].getInductionVar();
+                   
                     if ( std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value) == placeholder_index_values.end()){
                         placeholder_index_values.push_back(value);
                     }
-                    int index = std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value) - placeholder_index_values.begin();
-                    placeholder_index_args.push_back(builder.getAffineDimExpr(index));
+                    int index2 = std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value) - placeholder_index_values.begin();
+                    placeholder_index_args.push_back(builder.getAffineDimExpr(index2));
                 }
             
                 // std::cout<<"else there"<<std::endl;
@@ -802,7 +829,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         std::cout<<"number of "+std::to_string(placeholder_index_values.size())<<std::endl;
         std::cout<<"number of "+std::to_string(placeholder_index_args.size())<<std::endl;
         
-
+        theModule.dump();
         auto placeholder_map = mlir::AffineMap::get(placeholder_index_values.size(), 0, ArrayRef<mlir::AffineExpr> (placeholder_index_args),builder.getContext());
             
         // std::cout<<"number of "+std::to_string(placeholder_map.getNumDims())<<std::endl;
@@ -822,7 +849,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         // dump_expression(polyfp_expr, argument_list,mem, funcs, flag2, level, dim_number,builder,ops,vr,false);
         if (polyfp_expr.get_expr_type() == polyfp::e_var)
         {    
-
+            std::cout<<"hereee"<<std::endl;
 
             // if the expression is a variable(argument), get it from the function by its index
             int index_argument;
@@ -856,15 +883,19 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             }else{
                 if(placeholder_index_flag == true){
 
-                    
+                    std::cout<<"hereee2"<<std::endl;
                     auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), arg_1, mem, placeholder_map, placeholder_vr);
                     builder.setInsertionPointAfter(store1);
-                    // theModule.dump();
+                    theModule.dump();
                 }else{
-
+                    std::cout<<"hereee1"<<std::endl;
+                    theModule.dump();
                     auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), arg_1, mem, placeholder_vr);
+                    std::cout<<"number of "+std::to_string(placeholder_vr.size())<<std::endl;
+                    store1.dump();
+                    theModule.dump();
                     builder.setInsertionPointAfter(store1);
-                    // theModule.dump();
+                    theModule.dump();
 
                 }
                 
@@ -897,7 +928,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
 
             // operation op ;
             a_print_expr(polyfp_expr, comp);
-            // std::cout<<"We get a e_op1 here"<<std::endl;
+            std::cout<<"We get a e_op1 here"<<std::endl;
             // theModule.dump();
 
             if(if_flag == true){
@@ -916,55 +947,42 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                                                 /*withElseRegion=*/false);
                 builder.setInsertionPointToStart(ifOp.getBody());
                 //TODO: other arithmetic? sub, o_div
-                if(polyfp_expr.get_op_type() == polyfp::o_add){
-                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_add_op.back(), mem, placeholder_vr);
+                auto the_op = all_current_op.back();
+                auto index = the_op.index();
 
-                }
-                if(polyfp_expr.get_op_type() == polyfp::o_mul){
-                    if(all_mul_op.size() == 0){
-                        auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_add_op.back(), mem, placeholder_vr);
-                    }else{
-                        auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_mul_op.back(), mem, placeholder_vr);
-                    }
-                    
-
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
                 }
                 builder.setInsertionPointAfter(ifOp);
 
             }else{
-                theModule.dump();
-                std::cout<<"We come to this place1"<<std::endl;
-                if(polyfp_expr.get_op_type() == polyfp::o_add){
-                    std::cout<<"We come to this place2"<<std::endl;
-                    if(placeholder_index_flag == true){
-                        auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_add_op.back(), mem, placeholder_map, placeholder_vr);
-                        // theModule.dump();
-                    }else{
-                        auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_add_op.back(), mem, placeholder_vr);
-
-                    }
-                    
+                auto the_op = all_current_op.back();
+                auto index = the_op.index();
+                // theModule.dump();
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
                 }
-                if(polyfp_expr.get_op_type() == polyfp::o_mul){
-                    theModule.dump();
-                    std::cout<<"We come to this place2"<<std::endl;
-                    if(placeholder_index_flag == true){
-                        std::cout<<"We come to this place3"<<std::endl;
-                        auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_mul_op.back(), mem, placeholder_map, placeholder_vr);
-                        // theModule.dump();
-                    }else{
-                            std::cout<<"number of "+std::to_string(placeholder_vr.size())<<std::endl;
-                        // if(all_mul_op.size() == 0){
-                            std::cout<<"We come to this place4"<<std::endl;
-                            auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), all_add_op.back(), mem, placeholder_vr);
-                            std::cout<<"We come to this place4"<<std::endl;
-                            theModule.dump();
-                        // }
-                        
-
-                    }
-
-                }
+                // theModule.dump();
             }
             
             
@@ -1167,7 +1185,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         }
        
         
-
+        theModule.dump();
 
 
     }else if (isl_ast_node_get_type(node) == isl_ast_node_if)
@@ -1206,12 +1224,13 @@ int polyfp::MLIRGenImpl::get_iterator_location_from_name(polyfp::compute *comp, 
             }
         }
         mlir::Value value = ops[loc].getInductionVar();
-        // std::cout<<"dimensions"+std::to_string(loc)<<std::endl;
+        std::cout<<"dimensions"+std::to_string(loc)<<std::endl;
         if ( std::find(index_values.begin(), index_values.end(), value) == index_values.end()){
             index_values.push_back(value);
         }
 
         loc = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+        std::cout<<"dimensions"+std::to_string(loc)<<std::endl;
         
         
 
@@ -1219,12 +1238,14 @@ int polyfp::MLIRGenImpl::get_iterator_location_from_name(polyfp::compute *comp, 
     }else{
         loc = comp->get_loop_level_number_from_dimension_name(polyfp_expr.get_name());
         mlir::Value value = ops[loc].getInductionVar();
-        // std::cout<<"dimension"+std::to_string(loc)<<std::endl;
+        std::cout<<"elsedimension"+std::to_string(loc)<<std::endl;
         if ( std::find(index_values.begin(), index_values.end(), value) == index_values.end()){
             index_values.push_back(value);
         }
         loc = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+        std::cout<<"elsedimension"+std::to_string(loc)<<std::endl;
     }
+    std::cout<<"dimensions"+std::to_string(loc)<<std::endl;
     return loc;
 
 
@@ -1259,8 +1280,9 @@ mlir::AffineExpr polyfp::MLIRGenImpl::a_print_index(polyfp::expr polyfp_expr, po
       
     }
     if (polyfp_expr.get_expr_type() == polyfp::e_var)
-    {   
+    {   std::cout<<"enter here"<<std::endl;
         loc = get_iterator_location_from_name(comp,polyfp_expr,index_values);
+        std::cout<<loc<<std::endl;
         auto name_set = comp->get_loop_level_names();
         if(comp->is_tiled == true&&std::find(name_set.begin(), name_set.end(), polyfp_expr.get_name()) == name_set.end()){
             int loc_2 =0;
@@ -1297,13 +1319,14 @@ mlir::AffineExpr polyfp::MLIRGenImpl::a_print_index(polyfp::expr polyfp_expr, po
 
             
         }else{
+            std::cout<<loc<<std::endl;
             index_value = builder.getAffineDimExpr(loc);
         }
         
 
     }  
     if (polyfp_expr.get_expr_type() == polyfp::e_val)
-    {
+    {   std::cout<<"const value"<<std::endl;
         index_value = getAffineConstantExpr(polyfp_expr.get_int_val(),builder.getContext());
     }  
     // index_value = builder.getAffineDimExpr(loc%2);
@@ -1320,9 +1343,9 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
         mlir::AffineLoadOp loadedLhs;
         mlir::BlockArgument arg_left;
         mlir::BlockArgument arg_right;
-        // std::cout<<"round FIRST "<<std::endl;
+        std::cout<<"round FIRST "<<std::endl;
         if(left.get_op_type() == polyfp::o_access){
-            // std::cout<<"round FIRST access"<<std::endl;
+            std::cout<<"round FIRST access"<<std::endl;
             std::string a_name = left.get_name();
             int index_a;
             for(int i=0; i<argument_list.size(); i++){
@@ -1337,9 +1360,10 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             bool index_flag = false;
             for (auto &kv: left.get_access()){
                 int bias = 0;
-                // std::cout<<"round"<<std::endl;
+                std::cout<<"round"<<std::endl;
 
-                 if(kv.get_expr_type() == polyfp::e_op){
+                if(kv.get_expr_type() == polyfp::e_op){
+                    std::cout<<"get an op"<<std::endl;
                     auto expr0 = kv.get_operand(0);
                     auto expr1 = kv.get_operand(1);
                     auto left_index = a_print_index(expr0,comp,index_values);
@@ -1382,7 +1406,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
 
                     
                     if ( std::find(name_set.begin(), name_set.end(), kv.get_name()) == name_set.end() ){
-                        // std::cout<<"else thereo1"<<std::endl;
+                        std::cout<<"else thereo1"<<std::endl;
                         for (auto &kv2: comp->get_access_map()){
                             if(kv.get_name()==kv2.first){
                                 // std::cout<<"the name of the iterator:"<<std::endl;
@@ -1440,7 +1464,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                         loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
 
                         //zhe li location = 0
-                        // std::cout<<"else there"<<std::endl;
+                        std::cout<<"else there"<<std::endl;
                         // std::cout<<"the location is : "+std::to_string(comp->get_loop_level_number_from_dimension_name(kv2.second))<<std::endl;
                         
                         mlir::Value value = ops[comp->get_loop_level_number_from_dimension_name(kv.get_name())].getInductionVar();
@@ -1462,11 +1486,11 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             // values.push_back(value1);
             // mlir::Value value1 = ops[1].getInductionVar();
             // values.push_back(value1);
-            // std::cout<<"number of "+std::to_string(index_values.size())<<std::endl;
+            std::cout<<"number of "+std::to_string(index_values.size())<<std::endl;
 
             auto map = mlir::AffineMap::get(index_values.size(), 0, ArrayRef<mlir::AffineExpr> (index_args),builder.getContext());
             
-            // std::cout<<"number of "+std::to_string(map.getNumDims())<<std::endl;
+            std::cout<<"number of "+std::to_string(map.getNumDims())<<std::endl;
             mlir::ValueRange vr=llvm::makeArrayRef(index_values);
             //TODO.number of variables
             mlir::AffineLoadOp a;
@@ -1478,7 +1502,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             }
             
             // theModule.dump();
-            // std::cout<<"number of fisrt1"<<std::endl;
+            std::cout<<"number of fisrt1"<<std::endl;
 
             
         }else if(left.get_expr_type() == polyfp::e_var){
@@ -1494,6 +1518,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
         }
 
         if(right.get_op_type() == polyfp::o_access){
+            std::cout<<"number of fisrt2"<<std::endl;
             
             std::string a_name = right.get_name();
             int index_a;
@@ -1509,8 +1534,10 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             bool index_flag = false;
             for (auto &kv: right.get_access()){
                 int bias = 0;
-                // std::cout<<"round"<<std::endl;
+                std::cout<<"round"<<std::endl;
+                // std::cout<<kv.get_name()<<std::endl;
                 if(kv.get_expr_type() == polyfp::e_op){
+                    std::cout<<"it is an op"<<std::endl;
                     auto expr0 = kv.get_operand(0);
                     auto expr1 = kv.get_operand(1);
                     auto left_index = a_print_index(expr0,comp,index_values);
@@ -1547,16 +1574,18 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
 
                 }
                else{
+                    std::cout<<"it is a var"<<std::endl;
                     int loc =0;
                     int loc_2 =0;
                     std::string tile_name1;
                     std::string tile_name2;
                     int tile_size;
                     auto name_set = comp->get_loop_level_names();
-
+                    std::cout<<kv.get_name()<<std::endl;
                     
                     if ( std::find(name_set.begin(), name_set.end(), kv.get_name()) == name_set.end() ){
-                        // std::cout<<"else thereo1"<<std::endl;
+                        std::cout<<"else thereo1"<<std::endl;
+
                         for (auto &kv2: comp->get_access_map()){
                             if(kv.get_name()==kv2.first){
 
@@ -1564,19 +1593,20 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
 
                                 loc = comp->get_loop_level_number_from_dimension_name(kv2.second);
 
-                                // std::cout<<"location of it:"+std::to_string(loc)<<std::endl;
+                                std::cout<<"location of it:"+std::to_string(loc)<<std::endl;
                             }
                         }
+                        //todo,find the right dimension(multi-loops)
                         mlir::Value value = ops[loc].getInductionVar();
                         
                         if ( std::find(index_values.begin(), index_values.end(), value)== index_values.end() ){
-                            // std::cout<<"dimension"+std::to_string(loc)<<std::endl;
+                            std::cout<<"dimension"+std::to_string(loc)<<std::endl;
                             index_values.push_back(value);
                         }
                         if(comp->is_tiled ==true){
                             for (auto &kv3: comp->get_tile_map()){
                             if(tile_name1==kv3.first){
-  
+                                //todo,find the right dimension(multi-loops)
                                 loc_2 = comp->get_loop_level_number_from_dimension_name(kv3.second);
                                 tile_name2 = kv3.second;
 
@@ -1588,6 +1618,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                                     tile_size = kv4.second;
                                 }
                             }
+                            //todo,find the right dimension(multi-loops)
                             mlir::Value value2 = ops[loc_2].getInductionVar();
                         
                             if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
@@ -1600,7 +1631,10 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                             // index_args.push_back(builder.getAffineDimExpr(count)+builder.getAffineDimExpr(count+1)*tile_size);
 
                         }else{
-                            index_args.push_back(builder.getAffineDimExpr(loc));
+                            std::cout<<"location of it:"+std::to_string(loc)<<std::endl;
+                            int index = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            std::cout<<"location of it:"+std::to_string(index)<<std::endl;
+                            index_args.push_back(builder.getAffineDimExpr(index));
                         }
 
                         index_flag = true;
@@ -1614,7 +1648,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                         // std::cout<<"the location is : "+std::to_string(comp->get_loop_level_number_from_dimension_name(kv2.second))<<std::endl;
                         
                         mlir::Value value = ops[comp->get_loop_level_number_from_dimension_name(kv.get_name())].getInductionVar();
-                        // std::cout<<"dimension"+std::to_string(comp->get_loop_level_number_from_dimension_name(kv.get_name()))<<std::endl;
+                        std::cout<<"dimension"+std::to_string(comp->get_loop_level_number_from_dimension_name(kv.get_name()))<<std::endl;
                         if ( std::find(index_values.begin(), index_values.end(), value) == index_values.end()){
                             index_values.push_back(value);
                         }
@@ -1632,11 +1666,13 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             // values.push_back(value1);
             // mlir::Value value1 = ops[1].getInductionVar();
             // values.push_back(value1);
-            // std::cout<<"number of "+std::to_string(index_values.size())<<std::endl;
-
+            std::cout<<"number of "+std::to_string(index_values.size())<<std::endl;
+            std::cout<<"number of "+std::to_string(index_args.size())<<std::endl;
+            // theModule.dump();
             auto map = mlir::AffineMap::get(index_values.size(), 0, ArrayRef<mlir::AffineExpr> (index_args),builder.getContext());
             
-            // std::cout<<"number of "+std::to_string(map.getNumDims())<<std::endl;
+            std::cout<<"number of "+std::to_string(map.getNumDims())<<std::endl;
+            
             mlir::ValueRange vr=llvm::makeArrayRef(index_values);
             //TODO.number of variables
             mlir::AffineLoadOp a;
@@ -1648,7 +1684,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             }
      
             // theModule.dump();
-            // std::cout<<"number of fisrt2"<<std::endl;
+            std::cout<<"number of fisrt2"<<std::endl;
 
             
         }else if(right.get_expr_type() == polyfp::e_var){
@@ -1666,60 +1702,91 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             if(polyfp_expr.get_op_type() == polyfp::o_add){
                 auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedLhs, loadedRhs);
                 
-                add_op.push_back(add_1);
-                all_add_op.push_back(add_1);
-            }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                current_op.push_back(add_1);
+                all_current_op.push_back(add_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_mul){
                 auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedLhs, loadedRhs);
-                mul_op.push_back(mul_1);
-                all_mul_op.push_back(mul_1);
+                current_op.push_back(mul_1);
+                all_current_op.push_back(mul_1);
+                
+            }else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), loadedLhs, loadedRhs);
+                current_op.push_back(sub_1);
+                all_current_op.push_back(sub_1);
+                
+            }else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), loadedLhs, loadedRhs);
+                current_op.push_back(div_1);
+                all_current_op.push_back(div_1);
                 
             }
         }
         if (right.get_op_type() == polyfp::o_access  && left.get_expr_type() == polyfp::e_var){
             if(polyfp_expr.get_op_type() == polyfp::o_add){
                 auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, loadedRhs);
-                add_op.push_back(add_1);
-                all_add_op.push_back(add_1);
-            }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                current_op.push_back(add_1);
+                all_current_op.push_back(add_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_mul){
                 auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, loadedRhs);
-                mul_op.push_back(mul_1);
-                all_mul_op.push_back(mul_1);
+                current_op.push_back(mul_1);
+                all_current_op.push_back(mul_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), arg_left, loadedRhs);
+                current_op.push_back(sub_1);
+                all_current_op.push_back(sub_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), arg_left, loadedRhs);
+                current_op.push_back(div_1);
+                all_current_op.push_back(div_1);
             }
         }
         if (left.get_op_type() == polyfp::o_access  && right.get_expr_type() == polyfp::e_var){
             if(polyfp_expr.get_op_type() == polyfp::o_add){
                 auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedLhs, arg_right);
-                add_op.push_back(add_1);
-                all_add_op.push_back(add_1);
-            }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                current_op.push_back(add_1);
+                all_current_op.push_back(add_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_mul){
                 auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedLhs, arg_right);
-                mul_op.push_back(mul_1);
-                all_mul_op.push_back(mul_1);
+                current_op.push_back(mul_1);
+                all_current_op.push_back(mul_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                auto sub_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedLhs, arg_right);
+                current_op.push_back(sub_1);
+                all_current_op.push_back(sub_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                auto div_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedLhs, arg_right);
+                current_op.push_back(div_1);
+                all_current_op.push_back(div_1);
             }
         }
         if (left.get_expr_type() == polyfp::e_var  && right.get_expr_type() == polyfp::e_var){
             if(polyfp_expr.get_op_type() == polyfp::o_add){
                 auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, arg_right);
-                add_op.push_back(add_1);
-                all_add_op.push_back(add_1);
-            }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                current_op.push_back(add_1);
+                all_current_op.push_back(add_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_mul){
                 auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, arg_right);
-                mul_op.push_back(mul_1);
-                all_mul_op.push_back(mul_1);
+                current_op.push_back(mul_1);
+                all_current_op.push_back(mul_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                auto sub_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, arg_right);
+                current_op.push_back(sub_1);
+                all_current_op.push_back(sub_1);
+            }else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                auto div_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, arg_right);
+                current_op.push_back(div_1);
+                all_current_op.push_back(div_1);
             }
         }
-        // std::cout<<"finish number of fisrt2"<<std::endl;
+        std::cout<<"finish number of fisrt2"<<std::endl;
     }
        
     if ((right.get_op_type() == polyfp::o_access || right.get_expr_type() == polyfp::e_var ) && (left.get_op_type() != polyfp::o_access && left.get_expr_type() == polyfp::e_op)){
         mlir::AffineLoadOp loadedRhs;
-        // std::cout<<"round second "<<std::endl;
+        std::cout<<"round second "<<std::endl;
         a_print_expr(left,comp);
-        // std::cout<<"round second finished"<<std::endl;
+        // theModule.dump();
+        std::cout<<"round second finished"<<std::endl;
 
 
         if(right.get_op_type() == polyfp::o_access){
@@ -1828,7 +1895,10 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                             // index_args.push_back(builder.getAffineDimExpr(count)+builder.getAffineDimExpr(count+1)*tile_size);
 
                         }else{
-                            index_args.push_back(builder.getAffineDimExpr(loc));
+                            int index = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            std::cout<<"location of it:"+std::to_string(index)<<std::endl;
+                            index_args.push_back(builder.getAffineDimExpr(index));
+                            // index_args.push_back(builder.getAffineDimExpr(loc));
                         }
 
                         index_flag = true;
@@ -1885,17 +1955,86 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             // mlir::ValueRange vr=llvm::makeArrayRef(values);
 
             // loadedRhs = builder.create<mlir::AffineLoadOp>(builder.getUnknownLoc(), arg_a,vr);
+            auto the_op = current_op.back();
+            auto index = the_op.index();
 
             
+            
             if(polyfp_expr.get_op_type() == polyfp::o_add){
-                // std::cout<<"else there!!!"<<std::endl;
-                auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, add_op.back());
-                all_add_op.push_back(add_1);
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(add_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(add_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(add_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(add_1);
+                }
             }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
-                // std::cout<<"else there"<<std::endl;
-                auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedRhs, mul_op.back());
-                all_mul_op.push_back(mul_1);
+            else if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }
+            }
+            else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }
+            }
+            else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(div_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(div_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(div_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
+                    all_current_op.push_back(div_1);
+                }
             }
             // theModule.dump();
         }
@@ -1913,26 +2052,87 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             
             auto arg_right = funcs[0].getArgument(index_argument);
             // loadedRhs = builder.create<mlir::AffineLoadOp>(builder.getUnknownLoc(), arg_a ,vr);
-            
+            auto the_op = current_op.back();
+            auto index = the_op.index();
 
             
             if(polyfp_expr.get_op_type() == polyfp::o_add){
-                auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), add_op.back(),arg_right);
-                all_add_op.push_back(add_1);
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(add_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(add_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(add_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(add_1);
+                }
             }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
-
-                
-                if(add_op.size() == 1){
-                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), add_op.back(),arg_right);
-                    all_mul_op.push_back(mul_1);
-
-                }else{
-                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), mul_op.back(),arg_right);
-                    all_mul_op.push_back(mul_1);
+            else if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(mul_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(mul_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(mul_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(mul_1);
                 }
                 
-                // std::cout<<"else there###########1"<<std::endl;
+            }
+            else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(sub_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(sub_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(sub_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(sub_1);
+                }
+                
+            }
+            else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(div_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(div_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(div_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,arg_right);
+                    all_current_op.push_back(div_1);
+                }
                 
             }
         }
@@ -1941,7 +2141,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
     }
     if ((left.get_op_type() == polyfp::o_access || left.get_expr_type() == polyfp::e_var ) && (right.get_op_type() != polyfp::o_access && right.get_expr_type() == polyfp::e_op)){
         mlir::AffineLoadOp loadedLhs;
-        // std::cout<<"round third "<<std::endl;
+        std::cout<<"round third "<<std::endl;
 
         a_print_expr(right,comp);
         
@@ -2095,38 +2295,91 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                 loadedLhs = builder.create<mlir::AffineLoadOp>(builder.getUnknownLoc(), arg_a ,vr);
             }
 
-            // std::vector<mlir::Value> values;
-            // for (auto &kv: left.get_access()){
-            //     mlir::Value value = ops[comp->get_loop_level_number_from_dimension_name(kv.get_name())].getInductionVar();
-            //     values.push_back(value);
-            // }
-            // mlir::ValueRange vr=llvm::makeArrayRef(values);
+            auto the_op = current_op.back();
+            auto index = the_op.index();
 
-            // loadedLhs = builder.create<mlir::AffineLoadOp>(builder.getUnknownLoc(), arg_a,vr);
 
             // theModule.dump();
             if(polyfp_expr.get_op_type() == polyfp::o_add){
-                if(add_op.size()==0){
-                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), mul_op.back(), loadedLhs);
-                    all_add_op.push_back(add_1);
-                }else{
-                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), add_op.back(), loadedLhs);
-                    all_add_op.push_back(add_1);
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(add_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(add_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(add_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(add_1);
                 }
                 
                
             }
-            if(polyfp_expr.get_op_type() == polyfp::o_mul){
-                if(mul_op.size()==0){
-                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), add_op.back(), loadedLhs);
-                    all_mul_op.push_back(mul_1);
-                }else{
-                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), mul_op.back(), loadedLhs);
-                    all_mul_op.push_back(mul_1);
+            else if(polyfp_expr.get_op_type() == polyfp::o_mul){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(mul_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(mul_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(mul_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(mul_1);
                 }
                 
-                // auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), mul_op.back(), loadedLhs);
-                // all_mul_op.push_back(mul_1);
+            }
+            else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(sub_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(sub_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(sub_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(sub_1);
+                }
+                
+            }
+            else if(polyfp_expr.get_op_type() == polyfp::o_div){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(div_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(div_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(div_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), op_to_process,loadedLhs);
+                    all_current_op.push_back(div_1);
+                }
+                
             }
         }
         if(left.get_expr_type() == polyfp::e_var){
@@ -2139,15 +2392,84 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                 }
             }
             auto arg_left = funcs[0].getArgument(index_argument);
-
+            auto the_op = current_op.back();
+            auto index = the_op.index();
             
             if(polyfp_expr.get_op_type() == polyfp::o_add){
-                auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, add_op.back());
-                all_add_op.push_back(add_1);
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(add_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(add_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(add_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(add_1);
+                }
             }
             if(polyfp_expr.get_op_type() == polyfp::o_mul){
-                auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, mul_op.back());
-                all_mul_op.push_back(mul_1);
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(mul_1);
+                }
+            }
+            if(polyfp_expr.get_op_type() == polyfp::o_sub){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(sub_1);
+                }
+            }
+            if(polyfp_expr.get_op_type() == polyfp::o_div){
+                if(index==0){
+                    auto op_to_process = std::get<0>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(div_1);
+                }else if(index==1){
+                    auto op_to_process = std::get<1>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(div_1);
+                }else if(index==2){
+                    auto op_to_process = std::get<2>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(div_1);
+                }else if(index==3){
+                    auto op_to_process = std::get<3>(the_op);
+                    auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), arg_left, op_to_process);
+                    all_current_op.push_back(div_1);
+                }
             }
         }
         
@@ -2161,11 +2483,19 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             
         if(polyfp_expr.get_op_type() == polyfp::o_add){
             auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), add_op[add_op.size()-2], add_op.back());
-            all_add_op.push_back(add_1);
+            all_current_op.push_back(add_1);
         }
-        if(polyfp_expr.get_op_type() == polyfp::o_mul){
+        else if(polyfp_expr.get_op_type() == polyfp::o_mul){
             auto mul_1 = builder.create<mlir::arith::MulFOp>(builder.getUnknownLoc(), mul_op[mul_op.size()-2], mul_op.back());
-            all_mul_op.push_back(mul_1);
+            all_current_op.push_back(mul_1);
+        }
+        else if(polyfp_expr.get_op_type() == polyfp::o_sub){
+            auto sub_1 = builder.create<mlir::arith::SubFOp>(builder.getUnknownLoc(), mul_op[mul_op.size()-2], mul_op.back());
+            all_current_op.push_back(sub_1);
+        }
+        else if(polyfp_expr.get_op_type() == polyfp::o_div){
+            auto div_1 = builder.create<mlir::arith::DivFOp>(builder.getUnknownLoc(), mul_op[mul_op.size()-2], mul_op.back());
+            all_current_op.push_back(div_1);
         }
         
     }
@@ -2177,21 +2507,22 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     auto manager = MLIRGenImpl(context); 
     
     manager.mlirGen1(fct,node,level,true, false, false);
-    // manager.getModule().dump();
+
+    
     for(auto &comp : fct.leader_computations){
         int index = fct.leader_computation_index[comp];
-        // std::cout<<"index:";
-        // std::cout<<index<<std::endl;
+        std::cout<<"index:";
+        std::cout<<index<<std::endl;
         for(auto &kv : comp->get_directive_map()){
             if(kv.second == "pipeline"){
             
                 int loc = comp->get_loop_level_number_from_dimension_name(kv.first);
-                // std::cout<<"loc:";
-                // std::cout<<loc<<std::endl;
+                std::cout<<"loc:";
+                std::cout<<loc<<std::endl;
                 index = loc + index;
                 
                 mlir::scalehls::setLoopDirective(manager.ops[index], true, comp->II, false, false);
-                // std::cout<<"level"<<std::endl;
+                std::cout<<"level"<<std::endl;
             
                 // std::cout<<"22222"<<std::endl;
                 for(int i=1; i<=loc; i++){
@@ -2214,9 +2545,6 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     auto map = manager.get_argument_map();
 
     mlir::scalehls::setTopFuncAttr(manager.get_funcs()[0]);
-    // manager.getModule().dump();
-    
-    // mlir::scalehls::applyAutoArrayPartition(manager.funcs[0]);
     for(auto &kv: fct.get_partition_map()){
         SmallVector<mlir::scalehls::hls::PartitionKind, 4> kinds;
         SmallVector<unsigned, 4> factors;
@@ -2238,12 +2566,12 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
         // std::cout<<factors<<std::endl;
         mlir::scalehls::applyArrayPartition(map[std::get<0>(kv)], factors, kinds,/*updateFuncSignature=*/true);
         // mlir::scalehls::applyLegalizeTohls(manager.get_funcs()[0], true,true);
-        // manager.getModule().dump();
 
     }
-
-
+    manager.getModule().dump();
+    // mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     // mlir::scalehls::applyLegalizeTohls(manager.get_funcs()[0], true,true);
+    // manager.getModule().dump();
                 
     for(auto &comp: fct.leader_computations){
         if(comp->is_unrolled == true){
@@ -2261,7 +2589,7 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
             
         }
 
-    }
+     }
     // mlir::loopUnrollFull(manager.ops[1]);
     // manager.getModule().dump();
     // mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
@@ -2313,7 +2641,10 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
 
 
     // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[0],manager.funcs[0]);
-    //     auto latency = mlir::scalehls::getTiming(manager.ops[0]).getLatency();
+    mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
+
+    manager.getModule().dump();
+    // auto latency = mlir::scalehls::getTiming(manager.ops[0]).getLatency();
     // auto dspNum = mlir::scalehls::getResource(manager.ops[0]).getDsp();
     //     llvm::dbgs() << "The clock cycle is " << llvm::Twine(latency)
     //                        << ", DSP usage is " << llvm::Twine(dspNum) << ".\n\n";
@@ -2344,13 +2675,13 @@ void gen_mlir(polyfp::function &fct, isl_ast_node *node, int &level){
     context.getOrLoadDialect<mlir::memref::MemRefDialect>();
     context.getOrLoadDialect<mlir::scalehls::HLSDialect>();
     mlir::OwningOpRef<mlir::ModuleOp> module = mlirGen2(context, fct, node, level);
-    mlir::verify(*module);
-    if (failed(mlir::verify(*module))) {
+    mlir::verify(*module, false);
+    if (failed(mlir::verify(*module, false))) {
         module->emitError("module verification error");
         // module->dump();
     }
     
-    // module->dump();
+    module->dump();
     std::error_code error;
     std::string s = fct.get_name();
     std::string path = "/home/POM/samples/"+s+".mlir";
@@ -2374,7 +2705,7 @@ void function::gen_mlir_stmt()
 }
 
 
-  
-
+//  current_op.push_back
+// std::get<current_op.back().index()>(current_op.back())
 
   

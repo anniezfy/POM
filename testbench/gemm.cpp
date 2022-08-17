@@ -44,32 +44,32 @@ int main(){
     // compute s_2("s_2",{i,j,k},alpha*A(i,k),C(i,j));
 
     // compute s_3("s_3",{i,j,k},C(i,j)*beta,B(i,j));
-    compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
+    // compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
     // compute s_2("s_2",{i,j},C(i,j)*beta,C(i,j));
-    compute s_2("s_2",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
-    // compute s_1("s_1",{i,j},beta,A(i,j));
+    // compute s_2("s_2",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
+    compute s_1("s_1",{i,j},beta,A(i,j));
     // compute s_1_1("s_1_1",{i,j},beta,E(i,j));
-    // compute s_2("s_2",{i,j},alpha*A(i,k),B(i,j));
-
+    compute s_2("s_2",{i,j},alpha,B(i,j));
+    compute s_3("s_3",{i,j},alpha,B(i,j));
     // compute s_3("s_3",{i,j},B(i,j)*beta,C(i,j));
     // compute s_4("s_4",{i,j},C(i,j)+E(i,j),D(i,j));
     // s_2.get_expr().get_access_vector();
 
     // s_1_1.after(s_1,j);
-    // s_2.after(s_1,-1);
-    // s_3.after(s_2,-1);
+    s_2.after(s_1,j);
+    s_3.after(s_2,-1);
     // s_4.after(s_3,-1);
 
     // s_4.tile(i,j,1,4);
     
     // s_4.pipeline(k,1);
-    // s_1.pipeline(j,1);
+    s_1.pipeline(j,1);
     // s_2.pipeline(k,1);
     // // A.partition({1,6},"cyclic");
 
     // A.partition({4,4},"cyclic");
-    s_2.after(s_1,-1);
-    // fct->auto_DSE("/home/jason/Hope/samples/gemm/");
+    // s_2.after(s_1,-1);
+    // fct->auto_DSE("/home/POW/samples/gemm/");
     
     codegen();
     

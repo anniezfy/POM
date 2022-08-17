@@ -16,7 +16,8 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-
+#include <variant>
+#include <vector>
 #include "expr.h"
 #include "compute.h"
 #include "function.h"
@@ -25,7 +26,7 @@
 using namespace std;
 using namespace polyfp;
 int main(){
-    init("sediel");
+    init("test");
     auto *fct = global::get_implicit_function();
     var i("i", 1 ,4096);
     var j("j", 1 ,4096);
@@ -35,6 +36,25 @@ int main(){
     constant factor(9);
     // constant beta(3.7);
    //  expr = A(i-1,j+1)+A(i,j-1)
+    // compute s_1("s_1",{k,i,j},A(i-1,j-1)+A(i-1,j), A(i,j));
+
+
+    // using value = std::variant<int, bool,double, std::string>;
+    // std::vector<value> values;
+    // values.push_back(3.1415926);
+    // // std::vector<value> values = {0, true, 3.1415926,"hello"};
+    // auto out = values.back();
+    // const int index = out.index();
+    // std::cout<<index<<std::endl;
+    // const int test = index;
+    // std::cout<<test<<std::endl;
+    // if(index==2){
+    //     auto tep = std::get<2>(out);
+    // std::cout<<tep<<std::endl;
+    // }
+    
+
+    // compute s_1("s_1",{k,i,j},(A(i-1,j-1)+A(i-1,j))*(A(i-1,j+1)+A(i,j-1)), A(i,j));
     compute s_1("s_1",{k,i,j},(A(i-1,j-1)+A(i-1,j)+A(i-1,j+1)+A(i,j-1)+A(i,j)+A(i,j+1)+A(i+1,j-1)+A(i+1,j)+A(i+1,j+1))*factor, A(i,j));
     // s_4.interchange(j,k);
     // compute s_1("s_1",{i,j},beta,A(i,j));
@@ -51,11 +71,11 @@ int main(){
 
     // s_4.tile(i,j,1,4);
     
-    // s_4.pipeline(k,1);
+    s_1.pipeline(k,1);
     // s_2.pipeline(j,1);
-    // // A.partition({1,6},"cyclic");
+    // A.partition({1,6},"cyclic");
 
-    // A.partition({4,4},"cyclic");
+    A.partition({4,4},"cyclic");
     // s_2.after(s_1,j);
     // fct->auto_DSE(" /home/POM/samples/gemm/");
     

@@ -1429,7 +1429,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
     SmallVector<int64_t, 8> factors;
 
     std::string errorMessage;
-    auto configFile = mlir::openInputFile("/home/jason/Hope/lib/Polyhedral/config.json", &errorMessage);
+    auto configFile = mlir::openInputFile("/home/POM/samples/config.json", &errorMessage);
     if (!configFile) {
       llvm::errs() << errorMessage << "\n";
     }

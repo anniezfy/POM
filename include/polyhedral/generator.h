@@ -137,7 +137,9 @@ public:
 
     std::vector<mlir::arith::AddFOp> all_add_op;
     std::vector<mlir::arith::MulFOp> all_mul_op;
-    std::variant<mlir::arith::AddFOp, mlir::arith::MulFOp> current_op;
+    using value = std::variant<mlir::arith::AddFOp, mlir::arith::MulFOp,mlir::arith::SubFOp,mlir::arith::DivFOp>;
+    std::vector<value> current_op;
+    std::vector<value> all_current_op;
 
     using AffineLoopBand = SmallVector<mlir::AffineForOp, 6>;
     using TileList = SmallVector<unsigned, 8>;

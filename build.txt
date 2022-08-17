@@ -18,7 +18,7 @@ cmake --build . --target wrapper
 
 
 ../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
-    --scalehls-legalize-to-hlscpp="top-func=gemm" \
+    --scalehls-func-preprocess="top-func=gemm" \
     --cse -canonicalize \
     --scalehls-materialize-reduction \
     --scalehls-promote-buffer \
@@ -61,3 +61,19 @@ cmake --build . --target wrapper
 
         /home/POM/scalehls/polygeist/build/bin/mlir-clang test_bicg.c -function=test_bicg -S \
     -memref-fullrank -raise-scf-to-affine > test_bicg.mlir
+
+
+/home/POM/scalehls/polygeist/build/bin/mlir-clang backprop.c -function=backprop -S -memref-fullrank -raise-scf-to-affine \
+-I /usr/lib/clang/10.0.0/include -O0 -subindex-to-subview  > backprop.mlir
+
+
+/home/POM/scalehls/build/bin/scalehls-opt backprop.mlir -scalehls-materialize-reduction -scalehls-func-duplication \
+-fold-memref-subview-ops -canonicalize -scalehls-func-preprocess="top-func=backprop" > tmp.mlir
+
+
+
+../scalehls/build/bin/scalehls-opt ../samples/test/test.mlir\
+    --scalehls-func-preprocess="top-func=test" \
+    --cse -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/test/test.cpp
