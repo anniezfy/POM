@@ -129,7 +129,7 @@ public:
     // std::vector<mlir::Value> index_values;
     // SmallVector<mlir::AffineExpr> index_args;
     int get_iterator_location_from_name(polyfp::compute *comp,polyfp::expr polyfp_expr, std::vector<mlir::Value> &index_values);
-    mlir::AffineExpr a_print_index(polyfp::expr polyfp_expr, polyfp::compute *comp, std::vector<mlir::Value> &index_values);
+    mlir::AffineExpr a_print_index(polyfp::expr polyfp_expr, polyfp::compute *comp, std::vector<mlir::Value> &index_values,int level);
     std::vector<mlir::arith::AddFOp> add_op;
     // std::vector<mlir::Op<>> sum_op;
     std::vector<mlir::arith::MulFOp> mul_op;

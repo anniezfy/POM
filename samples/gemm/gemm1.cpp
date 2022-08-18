@@ -18,7 +18,7 @@
 using namespace std;
 
 /// This is top function.
-/// Latency=824684060676, interval=824684060676
+/// Latency=201334788, interval=201334788
 /// DSP=5, BRAM=0
 void gemm(
   float v0,
@@ -28,7 +28,7 @@ void gemm(
   float v4[4096][4096],
   float v5[4096][4096],
   float v6[4096][4096]
-) {	// L2, [0,824684060676)
+) {	// L2, [0,201334788)
   #pragma HLS interface s_axilite port=return bundle=ctrl
   #pragma HLS interface s_axilite port=v0 bundle=ctrl
   #pragma HLS interface s_axilite port=v1 bundle=ctrl
@@ -48,16 +48,14 @@ void gemm(
 
   #pragma HLS resource variable=v6 core=ram_s2p_bram
 
-  for (int v7 = 0; v7 < 4096; v7 += 1) {	// L3, [0,824684060674), iterCycle=201338882, II=201338882
-    for (int v8 = 0; v8 < 4096; v8 += 1) {	// L4, [0,201338882), iterCycle=49155, II=49155
-      v4[v7][v8] = v1;	// L5, [0,1)
-      for (int v9 = 0; v9 < 4096; v9 += 1) {	// L6, [1,49155), iterCycle=12, II=12
-        float v10 = v2[v7][v9];	// L7, [0,2)
-        float v11 = v0 * v10;	// L8, [2,6)
-        float v12 = v4[v7][v8];	// L9, [4,6)
-        float v13 = v11 + v12;	// L10, [6,11)
-        v4[v7][v8] = v13;	// L11, [11,12)
-      }
+  for (int v7 = 0; v7 < 4096; v7 += 1) {	// L3, [0,201334786), iterCycle=49154, II=49154
+    for (int v8 = 0; v8 < 4096; v8 += 1) {	// L4, [0,49154), iterCycle=12, II=12
+      v4[v7][v8] = v1;	// L5, [3,4)
+      float v9 = v2[v7][v7];	// L6, [0,2)
+      float v10 = v0 * v9;	// L7, [2,6)
+      float v11 = v4[v7][v8];	// L8, [4,6)
+      float v12 = v10 + v11;	// L9, [6,11)
+      v4[v7][v8] = v12;	// L10, [11,12)
     }
   }
 }

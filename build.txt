@@ -72,8 +72,8 @@ cmake --build . --target wrapper
 
 
 
-../scalehls/build/bin/scalehls-opt ../samples/test/test.mlir\
-    --scalehls-func-preprocess="top-func=test" \
+../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
+    --scalehls-func-preprocess="top-func=gemm" \
     --cse -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/test/test.cpp
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
