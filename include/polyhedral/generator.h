@@ -124,7 +124,7 @@ public:
     
     mlir::ModuleOp getModule();
 
-    void a_print_expr(polyfp::expr polyfp_expr, polyfp::compute *comp);
+    void a_print_expr(polyfp::expr polyfp_expr, polyfp::compute *comp, int level);
 
     // std::vector<mlir::Value> index_values;
     // SmallVector<mlir::AffineExpr> index_args;
