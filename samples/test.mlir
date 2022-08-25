@@ -1,16 +1,17 @@
 module {
-  func @test(%arg0: f32, %arg1: memref<4096x4096xf32>) attributes {top_func} {
-    affine.for %arg2 = 0 to 4096 {
-      affine.for %arg3 = 1 to 4096 {
-        affine.for %arg4 = 1 to 4096 {
-          %0 = affine.load %arg1[%arg3 - 1, %arg4 - 1] : memref<4096x4096xf32>
-          %1 = affine.load %arg1[%arg3 - 1, %arg4] : memref<4096x4096xf32>
-          %2 = arith.addf %0, %1 : f32
-          %3 = arith.mulf %2, %arg0 : f32
-          affine.store %3, %arg1[%arg3, %arg4] : memref<4096x4096xf32>
-        }
+  func @test(%arg0: f32, %arg1: f32, %arg2: f32, %arg3: memref<4096x4096xf32>) attributes {top_func} {
+    affine.for %arg4 = 0 to 4096 {
+      affine.for %arg5 = 1 to 4096 {
+        affine.for %arg6 = 1 to 4096 {
+          %0 = affine.load %arg3[%arg5 - 1, %arg6] : memref<4096x4096xf32>
+          %1 = arith.addf %0, %arg1 : f32
+          %2 = affine.load %arg3[%arg5 - 1, %arg6] : memref<4096x4096xf32>
+          %3 = arith.addf %arg2, %2 : f32
+          %4 = arith.addf %3, %1 : f32
+          affine.store %4, %arg3[%arg5, %arg6] : memref<4096x4096xf32>
+        } {parallel}
       }
-    } {loop_directive = #hls.ld<pipeline=true, targetII=1, dataflow=false, flatten=false>}
+    }
     return
   }
 }

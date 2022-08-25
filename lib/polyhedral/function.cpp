@@ -1275,28 +1275,21 @@ void polyfp::function::dump_schedule(std::string path){
    for(auto &comp : this->leader_computations){
         int index = this->leader_computation_index[comp];
         int position = manager.start_loops_position[index];
-        std::cout<<"position:";
-        std::cout<<position<<std::endl;
+        // std::cout<<"position:";
+        // std::cout<<position<<std::endl;
         for(auto &kv : comp->get_directive_map()){
             if(kv.second == "pipeline"){
             
                 int loc = comp->get_loop_level_number_from_dimension_name(kv.first);
-                std::cout<<"loc:";
-                std::cout<<loc<<std::endl;
+                // std::cout<<"loc:";
+                // std::cout<<loc<<std::endl;
                 position = loc + position;
-                
                 mlir::scalehls::setLoopDirective(manager.ops[position], true, comp->II, false, false);
-                std::cout<<"level"<<std::endl;
-            
-                std::cout<<"22222"<<std::endl;
                 if(position>=1){
                     for(int i=1; i<=loc; i++){
                     mlir::scalehls::setLoopDirective(manager.ops[position-i], false, 1, false, true);
                 }
-
                 }
-                
-                std::cout<<"333"<<std::endl;
 
             }
         
@@ -1331,6 +1324,36 @@ void polyfp::function::dump_schedule(std::string path){
     // mlir::loopUnrollFull(manager.ops[1]);
     mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
     mlir::scalehls::applyAutoArrayPartition(manager.get_funcs()[0]);
+    SmallVector<int64_t, 8> factors;
+    std::string errorMessage;
+    auto configFile = mlir::openInputFile("/home/POM/samples/config.json", &errorMessage);
+    if (!configFile) {
+      llvm::errs() << errorMessage << "\n";
+    }
+    auto config = llvm::json::parse(configFile->getBuffer());
+    if (!config) {
+      llvm::errs() << "failed to parse the target spec json file\n";
+    }
+    auto configObj = config.get().getAsObject();
+    if (!configObj) {
+      llvm::errs() << "support an object in the target spec json file, found "
+                      "something else\n";
+    }
+    unsigned maxDspNum =ceil(configObj->getInteger("dsp").getValueOr(220));
+    this->dsp_max = maxDspNum;
+    llvm::StringMap<int64_t> latencyMap;
+    mlir::scalehls::getLatencyMap(configObj, latencyMap);
+    llvm::StringMap<int64_t> dspUsageMap;
+    mlir::scalehls::getDspUsageMap(configObj, dspUsageMap);
+    int loc = 0;
+    int total_dsp = 0;
+    long total_latency = 0;
+    if(manager.start_loops_position.size() == 0){
+        manager.start_loops_position.push_back(0);
+    }
+
+    mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
+
     auto module = manager.getModule();
     // mlir::verify(module);
     // if (mlir::failed(mlir::verify(module))) {
@@ -1343,6 +1366,7 @@ void polyfp::function::dump_schedule(std::string path){
     std::string s = this->get_name();
     // std::string path = "/home/jason/Hope/samples/"+s+".mlir";
     std::string path1 = path+s+".mlir";
+    std::cout<<path1<<std::endl;
     llvm::raw_fd_ostream os(path1, error);
     os << *module;
 
@@ -1367,31 +1391,23 @@ polyfp::compute * polyfp::function::evaluate_func(){
     for(auto &comp : this->leader_computations){
         int index = this->leader_computation_index[comp];
         int position = manager.start_loops_position[index];
-        std::cout<<"position:";
-        std::cout<<position<<std::endl;
-        std::cout<<comp->get_name()<<std::endl;
-        std::cout<<"index:";
-        std::cout<<index<<std::endl;
+        // std::cout<<"position:";
+        // std::cout<<position<<std::endl;
+        // std::cout<<comp->get_name()<<std::endl;
+        // std::cout<<"index:";
+        // std::cout<<index<<std::endl;
         for(auto &kv : comp->get_directive_map()){
             if(kv.second == "pipeline"){
-            
                 int loc = comp->get_loop_level_number_from_dimension_name(kv.first);
                 std::cout<<"loc:";
                 std::cout<<loc<<std::endl;
                 position = loc + position;
-                
                 mlir::scalehls::setLoopDirective(manager.ops[position], true, comp->II, false, false);
-                // std::cout<<"level"<<std::endl;
-            
-                // std::cout<<"22222"<<std::endl;
                 if(position>=1){
                     for(int i=1; i<=loc; i++){
-                    mlir::scalehls::setLoopDirective(manager.ops[position-i], false, 1, false, true);
+                        mlir::scalehls::setLoopDirective(manager.ops[position-i], false, 1, false, true);
+                    }
                 }
-
-                }
-                // std::cout<<"333"<<std::endl;
-
             }
         
         }  
@@ -1399,14 +1415,9 @@ polyfp::compute * polyfp::function::evaluate_func(){
     }
 
     auto map = manager.get_argument_map();
-    // std::cout<<"ferter2";
-
     mlir::scalehls::setTopFuncAttr(manager.get_funcs()[0]);
-    // std::cout<<"ferter";
-    
-
-                
-     for(auto &comp: this->leader_computations){
+           
+    for(auto &comp: this->leader_computations){
         if(comp->is_unrolled == true){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
                 int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
@@ -1417,23 +1428,17 @@ polyfp::compute * polyfp::function::evaluate_func(){
                 }else{
                     mlir::loopUnrollFull(manager.ops[loc]);
                 }
-            }
-            
-            
+            }   
         }
-
     }
     mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
     mlir::scalehls::applyAutoArrayPartition(manager.get_funcs()[0]);
-
     SmallVector<int64_t, 8> factors;
-
     std::string errorMessage;
     auto configFile = mlir::openInputFile("/home/POM/samples/config.json", &errorMessage);
     if (!configFile) {
       llvm::errs() << errorMessage << "\n";
     }
-
     auto config = llvm::json::parse(configFile->getBuffer());
     if (!config) {
       llvm::errs() << "failed to parse the target spec json file\n";
@@ -1443,15 +1448,12 @@ polyfp::compute * polyfp::function::evaluate_func(){
       llvm::errs() << "support an object in the target spec json file, found "
                       "something else\n";
     }
-
-    unsigned maxDspNum =
-        ceil(configObj->getInteger("dsp").getValueOr(220) * 1.1);
+    unsigned maxDspNum =ceil(configObj->getInteger("dsp").getValueOr(220));
     this->dsp_max = maxDspNum;
     llvm::StringMap<int64_t> latencyMap;
     mlir::scalehls::getLatencyMap(configObj, latencyMap);
     llvm::StringMap<int64_t> dspUsageMap;
     mlir::scalehls::getDspUsageMap(configObj, dspUsageMap);
-
     int loc = 0;
     int total_dsp = 0;
     long total_latency = 0;
@@ -1461,11 +1463,10 @@ polyfp::compute * polyfp::function::evaluate_func(){
     for(auto &loop: manager.start_loops_position ){
         std::cout<<"loop: "+std::to_string(loop)<<std::endl;
         std::cout<<"size: "+std::to_string(manager.ops.size())<<std::endl;
-        
         mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[loop],manager.funcs[0]);
-        manager.getModule().dump(); 
+        // manager.getModule().dump(); 
         auto latency = mlir::scalehls::getTiming(manager.ops[loop]).getLatency();
-        std::cout<<"latency: "+std::to_string(latency)<<std::endl;
+        // std::cout<<"latency: "+std::to_string(latency)<<std::endl;
         auto dspNum = mlir::scalehls::getResource(manager.ops[loop]).getDsp();
         this->leader_computations[loc]->latency = latency;
         this->leader_computations[loc]->dsp = dspNum;
@@ -1536,9 +1537,6 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
     // }
     
     std::vector<std::vector<int>> tilesize_list;
-
-
-
     // std::string errorMessage;      
     // auto csvFile = mlir::openOutputFile("/home/jason/Hope/samples/dse_test.csv", &errorMessage);
     // if (!csvFile)
@@ -1547,11 +1545,11 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
     // Print header row.
 
-    std::ifstream ifs("/home/jason/Hope/samples/dse_test.csv",std::ios::in);
+    std::ifstream ifs("/home/POM/samples/dse_test.csv",std::ios::in);
     char ch;
     ifs>>ch;
     std::ofstream myfile;
-    myfile.open("/home/jason/Hope/samples/dse_test.csv",std::ios::app);
+    myfile.open("/home/POM/samples/dse_test.csv",std::ios::app);
     if(ifs.eof())
     {
         for (unsigned i = 0; i < size; ++i){
@@ -1559,15 +1557,9 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
 
         }
-        myfile << "cycle,dsp\n";
-            
+        myfile << "cycle,dsp\n";     
     }
-        
  
-    
-
-
-
     if(size == 3){
         for(int i = 0; i<6+factor; i++){
             factor1 = pow(2,i);
@@ -1597,9 +1589,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 comp->unroll_factor.clear();
                 comp->unroll_dimension.clear();
                 var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-            
-
-                if(tile_size[0]<=128 && tile_size[1]<=128){
+                if(tile_size[0]<=64 && tile_size[1]<=64 && tile_size[2]<=64){
                     std::cout<<"iterators:"+iterator_map[0].get_name()+iterator_map[1].get_name()+iterator_map[2].get_name()<<std::endl;
                     comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
                     if(comp->components.size()==0){
@@ -1619,8 +1609,8 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                             part.first->set_schedule(part.first->original_schedule);
                             part.first->set_loop_level_names(part.first->original_loop_level_name);
                             comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                            std::cout<<"tile_size[2]:"<<std::endl;
-                            std::cout<<tile_size[2]<<std::endl;
+                            // std::cout<<"tile_size[2]:"<<std::endl;
+                            // std::cout<<tile_size[2]<<std::endl;
                             if(tile_size[2]!=1){
                                 // std::cout<<"enter if"<<std::endl;
                                 part.first->after(comp,k1);
@@ -1640,8 +1630,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                     }
                     
                     if(this->leader_computations.size() == 1){
-                        std::cout<<"we got here in if"<<std::endl;
-                        
+                        std::cout<<"we got here in if"<<std::endl;            
                         this->evaluate_func();
                         //todo: latency xiangtong dsp buyiyang
                         if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
@@ -1974,7 +1963,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
         }
         }
         if(larger_factor == true){
-            std::cout<<"third: "<<std::endl;
+            std::cout<<"forth: "<<std::endl;
             if(this->dsp_max>this->dsp_usage){
                 for(auto &tile_size: tilesize_list){
                     comp->set_schedule(comp->original_schedule);
@@ -2079,7 +2068,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 }
         }
         }
-        myfile.close();
+        
         if(larger_factor == true){
             // std::cout<<"finished???"<<std::endl;
             factor = factor+1;
@@ -2095,7 +2084,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
             }
             
         }
-
+        myfile.close();
 
 
 
@@ -2134,7 +2123,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 for(auto &part:comp->components){
                     part.first->set_schedule(part.first->original_schedule);
                     part.first->set_loop_level_names(part.first->original_loop_level_name);
-                    std::cout<<"here!!!!!!!!"<<std::endl;
+                    // std::cout<<"here!!!!!!!!"<<std::endl;
                     auto iterators = part.first->get_iteration_variables();
                     int size = iterators.size();
                     std::map<int,polyfp::var> iterator_map;
@@ -2143,7 +2132,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         iterator_map[loc] = iter;
                     }
                     part.first->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
-                    std::cout<<"here!!!!!!!!"<<std::endl;
+                    // std::cout<<"here!!!!!!!!"<<std::endl;
                     if(tile_size[1]!=1){
                             part.first->after(comp,j1);
                             
@@ -2402,10 +2391,10 @@ polyfp::compute * polyfp::function::update_latency(){
     long node_index = this->get_longest_node(this->paths[path_index]);
     this->longest_path = path_index;
     this->longest_node = node_index;
-    std::cout<<"path: ";
-    std::cout<<path_index<<std::endl;
-    std::cout<<"node: ";
-    std::cout<<node_index<<std::endl;
+    // std::cout<<"path: ";
+    // std::cout<<path_index<<std::endl;
+    // std::cout<<"node: ";
+    // std::cout<<node_index<<std::endl;
 
     std::map<polyfp::compute *,int>::iterator it;
     polyfp::compute *comp;

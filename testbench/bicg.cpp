@@ -1,23 +1,3 @@
-#include <isl/set.h>
-#include <isl/map.h>
-#include <isl/union_map.h>
-#include <isl/union_set.h>
-#include <isl/ast_build.h>
-#include <isl/schedule.h>
-#include <isl/schedule_node.h>
-#include <isl/space.h>
-#include <isl/constraint.h>
-
-#include <map>
-#include <string.h>
-#include <stdint.h>
-#include <unordered_map>
-#include <unordered_set>
-#include <sstream>
-#include <iostream>
-#include <string>
-
-
 #include "expr.h"
 #include "compute.h"
 #include "function.h"
@@ -50,10 +30,15 @@ int main(){
     s_2.after(s_1,j);
     // s_1.pipeline(j0,1);
     // s_1.unroll(j1,-1);
-
-    fct->auto_DSE("/home/jason/Hope/samples/bicg/");
-
-    // codegen();
+    // fct->auto_DSE("/home/jason/Hope/samples/bicg/");
+    codegen();
     
     // fct->gen_c_code();
 }
+// C code:
+// for (int i = 0; i < N; i += 1) {
+//     for (int j = 0; j < N; j += 1) {
+//       s[j] += A[i][j] * r[i];
+//       q[i] += A[i][j] * p[j];
+//     }
+// }

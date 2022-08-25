@@ -34,6 +34,8 @@ int main(){
 
     placeholder A("A",{4096,4096},p_float32);
     constant factor(9);
+    constant alpha(1.6);
+    constant beta(3.7);
     // constant beta(3.7);
    //  expr = A(i-1,j+1)+A(i,j-1)
     // compute s_1("s_1",{k,i,j},A(i-1,j-1)+A(i-1,j), A(i,j));
@@ -55,7 +57,9 @@ int main(){
     
 
     // compute s_1("s_1",{k,i,j},(A(i-1,j-1)+A(i-1,j))*(A(i-1,j+1)+A(i,j-1)), A(i,j));
-    compute s_1("s_1",{k,i,j},(A(i-1,j-1)+A(i-1,j)+A(i-1,j+1)+A(i,j-1)+A(i,j)+A(i,j+1)+A(i+1,j-1)+A(i+1,j)+A(i+1,j+1))*factor, A(i,j));
+    compute s_1("s_1",{k,i,j},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,j));
+    expr e = (A(i-1,j)+alpha)*(beta+A(i-1,j));
+    e.dump(true);
     // s_4.interchange(j,k);
     // compute s_1("s_1",{i,j},beta,A(i,j));
     // compute s_1_1("s_1_1",{i,j},beta,E(i,j));

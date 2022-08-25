@@ -27,53 +27,44 @@ using namespace polyfp;
 int main(){
     init("gemm");
     auto *fct = global::get_implicit_function();
-    var i("i", 0 ,4096);
-    var j("j", 0 ,4096);
-    var k("k", 0 ,4096);
-
-    placeholder A("A",{4096,4096},p_float32);
-    placeholder B("B",{4096,4096},p_float32);
-    placeholder C("C",{4096,4096},p_float32);
-    placeholder D("D",{4096,4096},p_float32);
-    placeholder E("E",{4096,4096},p_float32);
+    var i("i", 0 ,1024);
+    var j("j", 0 ,1024);
+    var k("k", 0 ,1024);
+    placeholder A("A",{1024,1024},p_float32);
+    placeholder B("B",{1024,1024},p_float32);
+    placeholder C("C",{1024,1024},p_float32);
     constant alpha(1.6);
     constant beta(3.7);
 
-
-    // compute s_1("s_1",{i,j,k},beta,A(i,j));
-    // compute s_2("s_2",{i,j,k},alpha*A(i,k),C(i,j));
-
-    // compute s_3("s_3",{i,j,k},C(i,j)*beta,B(i,j));
-    // compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
-    // compute s_2("s_2",{i,j},C(i,j)*beta,C(i,j));
-    // compute s_2("s_2",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
-    compute s_1("s_1",{i,j},beta,C(i,j));
-    // compute s_1_1("s_1_1",{i,j},beta,E(i,j));
-    // compute s_2("s_2",{i,j},A(i,j)+A(i,j),B(i,j));
-    // compute s_3("s_3",{i,j},alpha*alpha+alpha*alpha,C(i,j));
-    compute s_3("s_3",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
-    // compute s_3("s_3",{i,j},B(i,j)*beta,C(i,j));
-    // compute s_4("s_4",{i,j},C(i,j)+E(i,j),D(i,j));
-    // s_2.get_expr().get_access_vector();
-
-    // s_1_1.after(s_1,j);
-    // s_2.after(s_1,j);
-    s_3.after(s_1,j);
-    // s_4.after(s_3,-1);
-
-    // s_4.tile(i,j,1,4);
+    compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
+    compute s_2("s_2",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
+    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+    // s_3.tile(i,j,4,4);
+    // s_3.tile(k,i,j,2,4,16,i0, j0,k0, i1, j1,k1);
+    // s_3.unroll(k1,-1);
+    // s_3.unroll(j1,-1);
+    // s_3.unroll(i1,-1);
     
     // s_4.pipeline(k,1);
     // s_1.pipeline(j,1);
     // s_2.pipeline(k,1);
-    // // A.partition({1,6},"cyclic");
-
-    // A.partition({4,4},"cyclic");
-    // s_2.after(s_1,-1);
-    // fct->auto_DSE("/home/POW/samples/gemm/");
-    
+    // A.partition({16,2},"cyclic");
+    // B.partition({2,4},"cyclic");
+    // C.partition({16,4},"cyclic");
+    s_2.after(s_1,-1);
+    // fct->auto_DSE("/home/POM/samples/gemm/");
     codegen();
-    
-
-    // fct->gen_c_code();
 }
+// C code:
+// for (int i = 0; i < N; i++) {
+//   for (int j = 0; j < N; j++) {
+//     C[i][j] *= beta;
+//   }
+// }
+// for (int i = 0; i < N; i++) {
+//   for (int j = 0; j < N; j++) {
+//     for (int k = 0; k < N; k++) {
+//       C[i][j] += alpha * A[i][k] * B[k][j];
+//     }
+//   }
+// }
