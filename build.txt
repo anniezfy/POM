@@ -10,7 +10,7 @@ cmake --build . --target wrapper
 
 
 
-../scalehls/build/bin/scalehls-opt ../samples/bicg.mlir\
+../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
     --scalehls-legalize-to-hlscpp="top-func=bicg" \
     --cse -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
@@ -18,25 +18,25 @@ cmake --build . --target wrapper
 
 
 ../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
-    --scalehls-func-preprocess="top-func=gemm" \
-    --cse -canonicalize \
+    --scalehls-reduce-initial-interval \
+    --scalehls-simplify-memref-access \
     --scalehls-materialize-reduction \
     --scalehls-promote-buffer \
-    --scalehls-reduce-initial-interval \
-    --scalehls-simplify-affine-if \
-    --scalehls-affine-store-forward \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
 
 
+../scalehls/build/bin/scalehls-opt ../samples/bicg.mlir\
+    -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
+
+
+
+mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
+
 ../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
-    --scalehls-legalize-to-hlscpp="top-func=bicg" \
-    --cse -canonicalize \
-    --scalehls-materialize-reduction \
-    --scalehls-promote-buffer \
-    --scalehls-reduce-initial-interval \
-    --scalehls-simplify-affine-if \
-    --scalehls-affine-store-forward \
+    --scalehls-func-preprocess="top-func=bicg" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
 
@@ -77,3 +77,31 @@ cmake --build . --target wrapper
     --cse -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
+
+
+
+
+
+/////////////////////////////////////
+gemm:
+/home/POM/scalehls/polygeist/build/bin/mlir-clang test_gemm.c -function=test_gemm -S \
+-memref-fullrank -raise-scf-to-affine > test_gemm.mlir
+/home/POM/scalehls/build/bin/scalehls-opt test_gemm.mlir -debug-only=scalehls \
+--scalehls-dse-pipeline="top-func=test_gemm target-spec=../config.json" \
+| /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_gemm.cpp
+
+
+bicg:
+/home/POM/scalehls/polygeist/build/bin/mlir-clang test_bicg.c -function=test_bicg -S \
+-memref-fullrank -raise-scf-to-affine > test_bicg.mlir
+/home/POM/scalehls/build/bin/scalehls-opt test_bicg.mlir -debug-only=scalehls \
+--scalehls-dse-pipeline="top-func=test_bicg target-spec=../config.json" \
+| /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_bicg.cpp
+
+
+gesummv:
+/home/POM/scalehls/polygeist/build/bin/mlir-clang test_gesummv.c -function=test_gesummv -S \
+-memref-fullrank -raise-scf-to-affine > test_gesummv.mlir
+/home/POM/scalehls/build/bin/scalehls-opt test_gesummv.mlir -debug-only=scalehls \
+--scalehls-dse-pipeline="top-func=test_gesummv target-spec=../config.json" \
+| /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_gesummv.cpp

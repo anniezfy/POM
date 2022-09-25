@@ -55,6 +55,8 @@ private:
      */
     static primitive_t loop_iterator_type;
 
+
+
     /**
       * When polyfp is initialized, an implicit polyfp
       * function is created.  All the computations and placeholders
@@ -63,6 +65,7 @@ private:
       * a different function as input to the API).
       */
     static function *implicit_fct;
+
 
 public:
 
@@ -74,6 +77,7 @@ public:
         static int counter = 0;
         return "b" + std::to_string(counter++);
     }
+
 
     static std::string generate_new_constant_name()
     {

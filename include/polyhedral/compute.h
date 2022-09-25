@@ -102,6 +102,7 @@ private:
      */
     std::map<std::string, isl_ast_expr *> iterators_map;
 
+
     std::map<std::string, std::string > access_map;
 
 
@@ -505,6 +506,7 @@ public:
     bool is_unrolled;
     long latency;
     int dsp;
+    int minII;
 
     isl_map * original_schedule;
     std::map<std::string, std::string > tile_map;
@@ -512,6 +514,7 @@ public:
     std::map<std::string, std::string > directive_map;
     std::map<std::string, std::string > directive_tool_map;
     std::vector<std::string> original_loop_level_name;
+    std::vector<std::string> final_loop_level_names;
     std::vector<int> unroll_factor;
     std::vector<polyfp::expr> unroll_dimension;
 
@@ -524,6 +527,9 @@ public:
     std::vector<std::string> best_loop_level_names;
     std::vector<int> best_unroll_factor;
     std::vector<polyfp::expr> best_unroll_dimension;
+
+    std::map<std::string, int>iterators_location_map;
+    int after_level;
 
 
     /**
@@ -665,6 +671,7 @@ public:
       * Compute the size of the buffer allocated automatically to hold the
       * results of this computation.
       */
+
     std::vector<polyfp::expr> compute_buffer_size();
     std::map<std::string, std::string > get_access_map();
     std::map<std::string, std::string > get_tile_map();
@@ -673,10 +680,13 @@ public:
     std::map<std::string, std::string > get_directive_tool_map();
     void update_leader_components(polyfp::compute *comp);
     void delete_leader_components(polyfp::compute *comp);
+    //TODO
+
 
 
     // DSE components
     std::map<polyfp::compute *, int> components;
+    std::map<int, polyfp::compute *> component_level_map;
     polyfp::compute *leader;
 
     std::unordered_map<int, polyfp::compute *> childern;

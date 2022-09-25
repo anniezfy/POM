@@ -39,7 +39,6 @@ void init(std::string fct_name)
 {
     function *fct = new function(fct_name);
     global::set_implicit_function(fct);
-
     // Do all the rest of the initialization.
     init();
 }

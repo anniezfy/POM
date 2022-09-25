@@ -55,6 +55,7 @@ function::function(std::string name)
     this->ast = NULL;
     this->context_set = NULL;
     this->ctx = isl_ctx_alloc();
+    this->global_location = 0;
 };
 
 isl_ctx *function::get_isl_ctx() const
@@ -531,7 +532,99 @@ void function::gen_time_space_domain()
     DEBUG_INDENT(-4);
 }
 
+void function::gen_loop_location()
+{
+    auto leader_list = this->leader_computations;
+    for (auto &a_leader : leader_list)
+    {   std::cout << "leader name: ";
+        std::cout << a_leader->get_name() <<'\n';
+        if(a_leader->is_leader == true){
+            std::cout <<"enter here" <<'\n';
+            // auto comp = a_leader;
+            std::cout <<a_leader->after_level <<'\n';
+            if(a_leader->after_level!= -2){
+                std::cout << "get here" <<'\n';
+                int level = a_leader->after_level;
+                int current_level = level;
+                int counter = 0;
+                // auto dim_list = a_leader->get_loop_level_names();
+                auto dim_list = a_leader->final_loop_level_names;
+                for(int i=0; i<dim_list.size(); i++)
+                {
+                    // auto fct = global::get_implicit_function();
+                    // std::cout<<dim_list[counter]<<std::endl;
+                    auto next_level = this->global_location;
+                    a_leader->iterators_location_map.insert(std::make_pair(dim_list[counter],next_level));
+                    this->global_location+=1;
+                    counter+=1;
+                }
+            }else{
+                std::cout << a_leader->get_name() <<'\n';
+                // std::vector<std::string> nms = a_leader->get_iteration_domain_dimension_names();
+                auto nms = a_leader->final_loop_level_names;
+                // std::cout <<nms.size()<<'\n';
+                for (int i = 0; i< nms.size(); i++){
+                    // if(this->get_body().size() == 1){
+                        a_leader->iterators_location_map.insert(std::make_pair(nms[i],i));
+                        this->global_location = nms.size();
+                    // }
+                    
+                }
+            }
+            
+        }
+        std::cout <<a_leader->iterators_location_map.size()<<'\n';
+        for(auto &map: a_leader->iterators_location_map){
+            std::cout<<map.first<<": "<<map.second<<std::endl;
+        }
+            
+        auto components = a_leader->components;
+        // sort components by their value
+        std::vector<std::pair<polyfp::compute*, int>> temp;
+        for (auto it = components.begin(); it != components.end(); it++)
+            temp.push_back(std::make_pair(it->first, it->second));
 
+        std::sort(temp.begin(), temp.end(), [](const std::pair<polyfp::compute*, int> &x, const std::pair<polyfp::compute*, int> &y) -> int {
+            return x.second < y.second;
+        });
+        std::cout <<"components: "<<'\n';
+        for (auto it = temp.begin(); it != temp.end(); it++)
+        {
+            std::cout << it->first->get_name() << ':' << it->second << '\n';
+            std::cout <<it->first->after_level <<'\n';
+            auto comp = it->first;
+            int level = comp->after_level;
+            int current_level = level;
+            int counter = 0;
+            auto dim_list = comp->final_loop_level_names;
+            auto leader_dim_map = comp->leader->iterators_location_map;
+            if(level!=-1)
+            {   
+                
+                for(int i=0; i<dim_list.size(); i++){
+                    if(counter <= current_level){
+                        comp->iterators_location_map.insert(std::make_pair(dim_list[counter],leader_dim_map[dim_list[counter]]));
+                        // std::cout<<leader_dim_map[dim_list[counter]]<<std::endl;
+                    }else{
+                        // auto fct = global::get_implicit_function();
+                        auto next_level = this->global_location;
+                        // std::cout<<next_level<<std::endl;
+                        comp->iterators_location_map.insert(std::make_pair(dim_list[counter],next_level));
+                        this->global_location += 1;
+                    }
+                    counter+=1;
+                }
+            }else{
+
+            }
+            std::cout<<"iterator locations:"<<std::endl;
+            for(auto &map: comp->iterators_location_map)
+                std::cout<<map.first<<map.second<<std::endl;
+        }
+        
+    }
+
+}
 /**
  * A pass to rename computations.
  * Computation that are defined multiple times need to be renamed, because
@@ -1222,6 +1315,7 @@ void polyfp::function::auto_DSE(std::string path){
 void polyfp::function::auto_DSE_loop_transformation(){
 
     // this->dump_sched_graph();
+    // this->gen_loop_location();
     for (auto &comp: this->leader_computations)
     {   
         // comp->get_loads_stores();
@@ -1251,7 +1345,7 @@ void polyfp::function::auto_DSE_loop_transformation(){
        }
 
     }
-    
+    // this->gen_loop_location();
     this->compute_dependency_graph();
     //TODO: Original schedule and Original dimension: iterators and loop_level_name
    
@@ -1277,20 +1371,23 @@ void polyfp::function::dump_schedule(std::string path){
         int position = manager.start_loops_position[index];
         // std::cout<<"position:";
         // std::cout<<position<<std::endl;
+        // std::cout<<comp->get_name()<<std::endl;
+        // std::cout<<"index:";
+        // std::cout<<index<<std::endl;
+        //TODO:
         for(auto &kv : comp->get_directive_map()){
             if(kv.second == "pipeline"){
-            
                 int loc = comp->get_loop_level_number_from_dimension_name(kv.first);
-                // std::cout<<"loc:";
-                // std::cout<<loc<<std::endl;
+                std::cout<<"loc:";
+                std::cout<<loc<<std::endl;
+                std::cout<<position<<std::endl;
                 position = loc + position;
                 mlir::scalehls::setLoopDirective(manager.ops[position], true, comp->II, false, false);
                 if(position>=1){
                     for(int i=1; i<=loc; i++){
-                    mlir::scalehls::setLoopDirective(manager.ops[position-i], false, 1, false, true);
+                        mlir::scalehls::setLoopDirective(manager.ops[position-i], false, 1, false, true);
+                    }
                 }
-                }
-
             }
         
         }  
@@ -1300,28 +1397,30 @@ void polyfp::function::dump_schedule(std::string path){
     auto map = manager.get_argument_map();
 
     mlir::scalehls::setTopFuncAttr(manager.get_funcs()[0]);
-    
+    mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
 
                 
-     for(auto &comp: this->leader_computations){
+    for(auto &comp: this->leader_computations){
         if(comp->is_unrolled == true){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
-                int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
-                int loc = this->leader_computation_index[comp];
-                loc = loc + bias;
+                // int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
+                // int loc = fct.leader_computation_index[comp];
+                std::cout<<comp->unroll_dimension[i].get_name();
+                int loc = comp->iterators_location_map[comp->unroll_dimension[i].get_name()];
+                std::cout<<"loc"<<std::endl;
+                std::cout<<loc<<std::endl;
+                // loc = loc + bias;
                 if(comp->unroll_factor[i] != -1){
                     mlir::loopUnrollUpToFactor(manager.ops[loc],comp->unroll_factor[i]);
                 }else{
                     mlir::loopUnrollFull(manager.ops[loc]);
                 }
-            }
-            
-            
+            }  
         }
-
-     }
+    }
     
     // mlir::loopUnrollFull(manager.ops[1]);
+
     mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
     mlir::scalehls::applyAutoArrayPartition(manager.get_funcs()[0]);
     SmallVector<int64_t, 8> factors;
@@ -1372,6 +1471,12 @@ void polyfp::function::dump_schedule(std::string path){
 
 }
 polyfp::compute * polyfp::function::evaluate_func(){
+    // this->
+    for(auto &comp: this->get_body()){
+        comp->iterators_location_map.clear();
+        this->global_location = 0;
+    }
+    this->gen_loop_location();
     this->gen_time_space_domain();
     this->gen_isl_ast();
     mlir::MLIRContext context;
@@ -1387,7 +1492,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
 
     
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);
-    
+    // manager.getModule().dump();
     for(auto &comp : this->leader_computations){
         int index = this->leader_computation_index[comp];
         int position = manager.start_loops_position[index];
@@ -1396,11 +1501,13 @@ polyfp::compute * polyfp::function::evaluate_func(){
         // std::cout<<comp->get_name()<<std::endl;
         // std::cout<<"index:";
         // std::cout<<index<<std::endl;
+        //TODO:
         for(auto &kv : comp->get_directive_map()){
             if(kv.second == "pipeline"){
                 int loc = comp->get_loop_level_number_from_dimension_name(kv.first);
                 std::cout<<"loc:";
                 std::cout<<loc<<std::endl;
+                std::cout<<position<<std::endl;
                 position = loc + position;
                 mlir::scalehls::setLoopDirective(manager.ops[position], true, comp->II, false, false);
                 if(position>=1){
@@ -1416,21 +1523,41 @@ polyfp::compute * polyfp::function::evaluate_func(){
 
     auto map = manager.get_argument_map();
     mlir::scalehls::setTopFuncAttr(manager.get_funcs()[0]);
+    mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
            
+    // for(auto &comp: this->leader_computations){
+    //     if(comp->is_unrolled == true){
+    //         for(int i=0; i<comp->unroll_dimension.size(); i++){
+    //             int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
+    //             int loc = this->leader_computation_index[comp];
+    //             loc = loc + bias;
+    //             if(comp->unroll_factor[i] != -1){
+    //                 mlir::loopUnrollUpToFactor(manager.ops[loc],comp->unroll_factor[i]);
+    //             }else{
+    //                 mlir::loopUnrollFull(manager.ops[loc]);
+    //             }
+    //         }   
+    //     }
+    // }
     for(auto &comp: this->leader_computations){
         if(comp->is_unrolled == true){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
-                int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
-                int loc = this->leader_computation_index[comp];
-                loc = loc + bias;
+                // int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
+                // int loc = fct.leader_computation_index[comp];
+                std::cout<<comp->unroll_dimension[i].get_name();
+                int loc = comp->iterators_location_map[comp->unroll_dimension[i].get_name()];
+                std::cout<<"loc"<<std::endl;
+                std::cout<<loc<<std::endl;
+                // loc = loc + bias;
                 if(comp->unroll_factor[i] != -1){
                     mlir::loopUnrollUpToFactor(manager.ops[loc],comp->unroll_factor[i]);
                 }else{
                     mlir::loopUnrollFull(manager.ops[loc]);
                 }
-            }   
+            }  
         }
     }
+
     mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
     mlir::scalehls::applyAutoArrayPartition(manager.get_funcs()[0]);
     SmallVector<int64_t, 8> factors;
@@ -1448,7 +1575,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
       llvm::errs() << "support an object in the target spec json file, found "
                       "something else\n";
     }
-    unsigned maxDspNum =ceil(configObj->getInteger("dsp").getValueOr(220));
+    unsigned maxDspNum =ceil(configObj->getInteger("dsp").getValueOr(220)*1.1);
     this->dsp_max = maxDspNum;
     llvm::StringMap<int64_t> latencyMap;
     mlir::scalehls::getLatencyMap(configObj, latencyMap);
@@ -1461,15 +1588,18 @@ polyfp::compute * polyfp::function::evaluate_func(){
         manager.start_loops_position.push_back(0);
     }
     for(auto &loop: manager.start_loops_position ){
-        std::cout<<"loop: "+std::to_string(loop)<<std::endl;
-        std::cout<<"size: "+std::to_string(manager.ops.size())<<std::endl;
+        // std::cout<<"loop: "+std::to_string(loop)<<std::endl;
+        // std::cout<<"size: "+std::to_string(manager.ops.size())<<std::endl;
         mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[loop],manager.funcs[0]);
         // manager.getModule().dump(); 
         auto latency = mlir::scalehls::getTiming(manager.ops[loop]).getLatency();
         // std::cout<<"latency: "+std::to_string(latency)<<std::endl;
         auto dspNum = mlir::scalehls::getResource(manager.ops[loop]).getDsp();
+        auto minII = mlir::scalehls::getLoopInfo(manager.ops[loop]).getMinII();
         this->leader_computations[loc]->latency = latency;
         this->leader_computations[loc]->dsp = dspNum;
+        this->leader_computations[loc]->minII = minII;
+
         total_dsp+=dspNum;
         total_latency+=latency;
         this->latency_map[loc] = latency;
@@ -1530,10 +1660,11 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
             max_dim = dim;
         }
     }
-    std::cout<<"upper bound:";
-    std::cout<<max_dim<<std::endl;
+    //upper bound:like 4096
+    // std::cout<<"upper bound:";
+    // std::cout<<max_dim<<std::endl;
     // if(max_dim>=500){
-        int scale = 64*pow(2,factor-1);
+        int scale = 128*pow(2,factor-1);
     // }
     
     std::vector<std::vector<int>> tilesize_list;
@@ -1544,12 +1675,14 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
     // auto &os = csvFile->os();
 
     // Print header row.
-
-    std::ifstream ifs("/home/POM/samples/dse_test.csv",std::ios::in);
+    std::string s = this->get_name();
+    // std::string path = "/home/jason/Hope/samples/"+s+".mlir";
+    std::string path1 = path+s+".csv";
+    std::ifstream ifs(path1,std::ios::in);
     char ch;
     ifs>>ch;
     std::ofstream myfile;
-    myfile.open("/home/POM/samples/dse_test.csv",std::ios::app);
+    myfile.open(path1,std::ios::app);
     if(ifs.eof())
     {
         for (unsigned i = 0; i < size; ++i){
@@ -1557,30 +1690,31 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
 
         }
-        myfile << "cycle,dsp\n";     
+        myfile << "cycle,dsp,ii\n";     
     }
  
     if(size == 3){
-        for(int i = 0; i<6+factor; i++){
-            factor1 = pow(2,i);
-            for(int j = 0; j<6+factor-i; j++){
-                factor2 = pow(2,j);
-                factor3 = scale/factor2/factor1;
-                tilesize_list.push_back({factor1,factor2,factor3});
-                std::cout<<"tile factor: ";
-                std::cout<<factor1;
-                std::cout<<"; ";
-                std::cout<<factor2;
-                std::cout<<"; ";
-                std::cout<<factor3<<std::endl;
-            }
-        }
-
+        // for(int i = 0; i<6+factor; i++){
+        //     factor1 = pow(2,i);
+        //     for(int j = 0; j<6+factor-i; j++){
+        //         factor2 = pow(2,j);
+        //         factor3 = scale/factor2/factor1;
+        //         tilesize_list.push_back({factor1,factor2,factor3});
+        //     }
+        // }
+        // tilesize_list.push_back({1,8,16});
+        // tilesize_list.push_back({1,16,8});
+        // tilesize_list.push_back({2,4,16});
+        tilesize_list.push_back({2,8,8});
+        // tilesize_list.push_back({2,8,8});
+        // tilesize_list.push_back({2,8,8});
+        // tilesize_list.push_back({4,2,16});
         bool larger_factor = true;
         // long best_latency = LONG_MAX;
         // //TODO
         // int best_dsp = 9999;
-        if(this->leader_computations.size() != 1){
+        if(larger_factor == true){
+            std::cout<<"current computation: "+comp->get_name()<<std::endl;
             for(auto &tile_size: tilesize_list){
                 comp->set_schedule(comp->original_schedule);
                 comp->set_loop_level_names(comp->original_loop_level_name);
@@ -1588,59 +1722,102 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 comp->is_unrolled = false;
                 comp->unroll_factor.clear();
                 comp->unroll_dimension.clear();
+                comp->tile_map.clear();
+                comp->tile_size_map.clear();
+                comp->access_map.clear();
+                // comp->after_level = -2;
                 var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-                if(tile_size[0]<=64 && tile_size[1]<=64 && tile_size[2]<=64){
-                    std::cout<<"iterators:"+iterator_map[0].get_name()+iterator_map[1].get_name()+iterator_map[2].get_name()<<std::endl;
+                if(tile_size[0]<32 && tile_size[1]<32 && tile_size[2]<32){
                     comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                    if(comp->components.size()==0){
-                        if(tile_size[2]!=1){
-                            std::cout<<"enter if"<<std::endl;
-                            comp->pipeline(k1,1);
-                        }else if(tile_size[1]!=1 && tile_size[2]==1){
-                            // std::cout<<"enter if"<<std::endl;
-                            comp->pipeline(j1,1);
-                        }else if(tile_size[1]==1 && tile_size[2]==1){
-                            // std::cout<<"enter if"<<std::endl;
-                            comp->pipeline(i1,1);
-                        }
-
-                    }else{
-                        for(auto &part:comp->components){
-                            part.first->set_schedule(part.first->original_schedule);
-                            part.first->set_loop_level_names(part.first->original_loop_level_name);
-                            comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                            // std::cout<<"tile_size[2]:"<<std::endl;
-                            // std::cout<<tile_size[2]<<std::endl;
-                            if(tile_size[2]!=1){
-                                // std::cout<<"enter if"<<std::endl;
-                                part.first->after(comp,k1);
-                                comp->pipeline(k1,1);
-                            }else if(tile_size[1]!=1 && tile_size[2]==1){
-                                // std::cout<<"enter if"<<std::endl;
-                                part.first->after(comp,j1);
-                                comp->pipeline(j1,1);
-                            }else if(tile_size[1]==1 && tile_size[2]==1){
-                                // std::cout<<"enter if"<<std::endl;
-                                part.first->after(comp,i1);
-                                comp->pipeline(i1,1);
-                            }
-                    
-                        }
-
+                    if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        comp->pipeline(k0,1);
+                        comp->unroll(k1,-1);
+                        comp->unroll(j1,-1);
+                        comp->unroll(i1,-1);
                     }
-                    
-                    if(this->leader_computations.size() == 1){
-                        std::cout<<"we got here in if"<<std::endl;            
+                    if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
+                        comp->pipeline(k0,1);
+                        comp->unroll(k1,-1);
+                        comp->unroll(j1,-1);
+                    }
+                    if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
+                        comp->pipeline(k0,1);
+                        comp->unroll(k1,-1);
+                        comp->unroll(i1,-1);
+                    }
+                    if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        comp->pipeline(iterator_map[2],1);
+                        comp->unroll(i1,-1);
+                        comp->unroll(j1,-1);
+                    }
+                    for(auto &part:comp->components){
+                        part.first->set_schedule(part.first->original_schedule);
+                        part.first->set_loop_level_names(part.first->original_loop_level_name);
+                        part.first->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+                        // if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        //     part.first->after(comp,k1);
+                        //     // comp->pipeline(i1,1);
+                        //     // comp->unroll(k1,-1);
+                        //     // comp->unroll(j1,-1);
+                        // }
+                        // if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        //     part.first->after(comp,k1);
+                        // }
+                        // if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
+                        //     part.first->after(comp,k1);
+                        // }
+                        // if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
+                        //     part.first->after(comp,k1);
+                        // }
+                        if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
+                            part.first->after(comp,j1);
+                        }else{
+                            part.first->after(comp,k1);
+                        }
+                    }
+                    int II = 1;
+                    if(this->leader_computations.size() == 1){                          
+                        // this->evaluate_func();
+                        // if(this->dsp_max < this->dsp_usage){
+                        //     int new_II= this->dsp_usage / this->dsp_max;
+                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        //         comp->pipeline(k0,new_II);
+                        //     }
+                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
+                        //         comp->pipeline(k0,new_II);
+                        //     }
+                        //     if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
+                        //         comp->pipeline(k0,new_II);
+                        //     }
+                        //     if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        //         comp->pipeline(iterator_map[2],new_II);
+                        //     }
+                        //     II = new_II;
+                        // }
+                        // this->evaluate_func();
+                        // if(this->dsp_max < this->dsp_usage){
+                        //     int new_II= this->dsp_usage / this->dsp_max +1;
+                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        //         comp->pipeline(k0,new_II);
+                        //     }
+                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
+                        //         comp->pipeline(k0,new_II);
+                        //     }
+                        //     if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
+                        //         comp->pipeline(k0,new_II);
+                        //     }
+                        //     if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
+                        //         comp->pipeline(iterator_map[2],new_II);
+                        //     }
+                        //     II = new_II;
+                        // }
                         this->evaluate_func();
-                        //todo: latency xiangtong dsp buyiyang
                         if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
                             this->best_latency = this->current_latency;
                             this->best_dsp_usage = this->dsp_usage;
-
                             std::cout<<"best_latency:  "<<std::endl;
-                            std::cout<<this->best_latency<<std::endl;
+                            std::cout<<best_latency<<std::endl;
                             this->dump_schedule(path);
-
                             // this->best_ast = this->get_isl_ast();
                             // comp->best_schedule = comp->get_schedule();
                             // comp->best_tile_map = comp->tile_map;
@@ -1652,17 +1829,18 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                             // comp->best_unroll_dimension = comp->unroll_dimension;
                         }
                         
-                        if(this->dsp_max>this->dsp_usage){
-                            larger_factor = true;
-                            // auto_DSE_tile_size(new_comp, factor);
-                        }
+                        // if(this->dsp_max>this->dsp_usage){
+                        //     larger_factor = true;
+                        //     // auto_DSE_tile_size(new_comp, factor);
+                        // }
 
                     }else{
+                        std::cout<<"enter else: "+comp->get_name()<<std::endl;
                         auto new_comp = this->evaluate_func();
                         if(new_comp != comp && this->dsp_max>this->dsp_usage){
-                            std::cout<<"another comp:  "<<std::endl;
+                            // larger_factor = false;
                             auto_DSE_tile_size(new_comp, 1,path);
-                        }else{
+                        }else if(new_comp == comp &&this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
                             this->best_latency = this->current_latency;
                             this->best_dsp_usage = this->dsp_usage;
 
@@ -1672,436 +1850,67 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                             auto latency = comp->latency;
                             int dsp = comp->dsp;
                             std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                            myfile << tile_size[0] << ",";
-                            myfile << tile_size[1] << ",";
-                            myfile << tile_size[2] << ",";
-                            myfile << latency<< ",";
-                            myfile << this->dsp_usage << "\n";
+                            // myfile << tile_size[0] << ",";
+                            // myfile << tile_size[1] << ",";
+                            // myfile << tile_size[2] << ",";
+                            // myfile << latency<< ",";
+                            // myfile << this->dsp_usage << ",";
+                            // myfile << comp->minII << "\n";
+
                         }
                     }
-                    // auto latency = comp->latency;
-                    // int dsp = comp->dsp;
-                    // std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                    // myfile << tile_size[0] << ",";
-                    // myfile << tile_size[1] << ",";
-                    // myfile << tile_size[2] << ",";
-                    // myfile << latency<< ",";
-                    // myfile << this->dsp_usage << "\n";
+                    
+                    auto latency = comp->latency;
+                    int dsp = comp->dsp;
+                    
+                    std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)+": "+std::to_string(II)<<std::endl;
+                    myfile << tile_size[0] << ",";
+                    myfile << tile_size[1] << ",";
+                    myfile << tile_size[2] << ",";
+                    myfile << latency<< ",";
+                    myfile << this->dsp_usage << ",";
+                    myfile << comp->minII << "\n";
 
-                    
-                    
                 }
                 
             }
-       
-            if(larger_factor == true){
-                std::cout<<"second: "<<std::endl;
-                if(this->dsp_max>this->dsp_usage){
-                // pipeline +unroll
-                // auto_DSE_tile_size(comp, factor+1);
-                    for(auto &tile_size: tilesize_list){
-                        comp->set_schedule(comp->original_schedule);
-                        comp->set_loop_level_names(comp->original_loop_level_name);
-                        comp->directive_map.clear();
-                        comp->is_unrolled = false;
-                        comp->unroll_factor.clear();
-                        comp->unroll_dimension.clear();
-                        var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-                    
 
-                        if(tile_size[0]<=128 && tile_size[1]<=128){
-                            comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                            if(comp->components.size()==0){
-                                if(tile_size[2]!=1 && tile_size[1]!=1 ){
-                        
-                                    comp->pipeline(j1,1);
-                                    comp->unroll(k1,-1);
-                                }else if(tile_size[1]==1 && tile_size[2]==1){
-                                
-                                    comp->pipeline(iterator_map[2],1);
-                                    comp->unroll(i1,-1);
-                                }else if(tile_size[0]==1 && tile_size[1]==1){
-                                    comp->pipeline(iterator_map[2],1);
-                                    comp->unroll(k1,-1);
-                                }else if(tile_size[0]==1 && tile_size[2]==1){
-                                
-                                    comp->pipeline(iterator_map[2],1);
-                                    comp->unroll(j1,-1);
-                                }else if(tile_size[2]!=1 && tile_size[1]==1){
-                                    
-                                    comp->pipeline(i1,1);
-                                    comp->unroll(k1,-1);
-                                }else if(tile_size[2]==1 && tile_size[1]!=1){
-                                
-                                    comp->pipeline(i1,1);
-                                    comp->unroll(j1,-1);
-                                }
-
-                            }
-                            for(auto &part:comp->components){
-                                part.first->set_schedule(part.first->original_schedule);
-                                part.first->set_loop_level_names(part.first->original_loop_level_name);
-                                comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                                if(tile_size[2]!=1 && tile_size[1]!=1 ){
-                                    part.first->after(comp,k1);
-                                    comp->pipeline(j1,1);
-                                    comp->unroll(k1,-1);
-                                }else if(tile_size[1]==1 && tile_size[2]==1){
-                                
-                                    part.first->after(comp,i1);
-                                    comp->pipeline(iterator_map[2],1);
-                                    comp->unroll(i1,-1);
-                                }else if(tile_size[0]==1 && tile_size[1]==1){
-                                    part.first->after(comp,k1);
-                                    comp->pipeline(iterator_map[2],1);
-                                    comp->unroll(k1,-1);
-                                }else if(tile_size[0]==1 && tile_size[2]==1){
-                                    part.first->after(comp,j1);
-                                    comp->pipeline(iterator_map[2],1);
-                                    comp->unroll(j1,-1);
-                                }else if(tile_size[2]!=1 && tile_size[1]==1){
-                                    part.first->after(comp,k1);
-                                    comp->pipeline(i1,1);
-                                    comp->unroll(k1,-1);
-                                }else if(tile_size[2]==1 && tile_size[1]!=1){
-                                    part.first->after(comp,j1);
-                                    comp->pipeline(i1,1);
-                                    comp->unroll(j1,-1);
-                                }
-                                
-                            
-                            }
-                            if(this->leader_computations.size() == 1){
-                            // std::cout<<"we got here in if"<<std::endl;
-                                
-                                this->evaluate_func();
-                                if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
-                                    this->best_latency = this->current_latency;
-                                    this->best_dsp_usage = this->dsp_usage;
-
-                                    std::cout<<"best_latency:  "<<std::endl;
-                                    std::cout<<best_latency<<std::endl;
-                                    this->dump_schedule(path);
-                                    // this->best_ast = this->get_isl_ast();
-                                    // comp->best_schedule = comp->get_schedule();
-                                    // comp->best_tile_map = comp->tile_map;
-                                    // comp->best_tile_size_map = comp->tile_size_map;
-                                    // comp->best_directive_map = comp->directive_map;
-                                    // comp->best_directive_tool_map = comp->directive_tool_map;
-                                    // comp->best_loop_level_names = comp->get_loop_level_names();
-                                    // comp->best_unroll_factor = comp->unroll_factor;
-                                    // comp->best_unroll_dimension = comp->unroll_dimension;
-                                }
-                                
-                                if(this->dsp_max>this->dsp_usage){
-                                    larger_factor = true;
-                                    // auto_DSE_tile_size(new_comp, factor);
-                                }
-
-                            }else{
-                                auto new_comp = this->evaluate_func();
-                                if(new_comp != comp && this->dsp_max>this->dsp_usage){
-                                    // larger_factor = false;
-                                    auto_DSE_tile_size(new_comp, 1,path);
-                                }else{
-                                    this->best_latency = this->current_latency;
-                                    this->best_dsp_usage = this->dsp_usage;
-
-                                    std::cout<<"best_latency:  "<<std::endl;
-                                    std::cout<<this->best_latency<<std::endl;
-                                    this->dump_schedule(path);
-                                    auto latency = comp->latency;
-                                    int dsp = comp->dsp;
-                                    std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                                    myfile << tile_size[0] << ",";
-                                    myfile << tile_size[1] << ",";
-                                    myfile << tile_size[2] << ",";
-                                    myfile << latency<< ",";
-                                    myfile << this->dsp_usage << "\n";
-                                }
-                            }
-
-                            
-                            auto latency = comp->latency;
-                            int dsp = comp->dsp;
-                            
-                            std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                            myfile << tile_size[0] << ",";
-                            myfile << tile_size[1] << ",";
-                            myfile << latency<< ",";
-                            myfile << this->dsp_usage << "\n";
-
-                        }
-                        
-                    }
-                }
-            }
         }
-        if(larger_factor == true){
-            std::cout<<"third: "<<std::endl;
-            if(this->dsp_max>this->dsp_usage){
-                if(this->dsp_max>this->dsp_usage){
-            // pipeline +unroll
-            // auto_DSE_tile_size(comp, factor+1);
-                for(auto &tile_size: tilesize_list){
-                    comp->set_schedule(comp->original_schedule);
-                    comp->set_loop_level_names(comp->original_loop_level_name);
-                    comp->directive_map.clear();
-                    comp->is_unrolled = false;
-                    comp->unroll_factor.clear();
-                    comp->unroll_dimension.clear();
-                    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+
+        // if(larger_factor == true){
+        //     // std::cout<<"finished???"<<std::endl; 
+        //     factor = factor+1;
+        //     comp->set_schedule(comp->original_schedule);
+        //     comp->set_loop_level_names(comp->original_loop_level_name);
+        //     comp->directive_map.clear();
+        //     comp->unroll_factor.clear();
+        //     comp->unroll_dimension.clear();
+        //     comp->is_unrolled = false;
+        //     if(this->dsp_max>this->dsp_usage && factor<=2){
+        //         this->auto_DSE_tile_size(comp,factor,path);
                 
-
-                    if(tile_size[0]<=128 && tile_size[1]<=128){
-                        comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-
-                        if(comp->components.size()==0){
-                            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-    
-                                comp->pipeline(i1,1);
-                                comp->unroll(k1,-1);
-                                comp->unroll(j1,-1);
-                            }
-                            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
-    
-                                comp->pipeline(k0,1);
-                                comp->unroll(k1,-1);
-                                comp->unroll(j1,-1);
-                            }
-                            if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
-    
-                                comp->pipeline(k0,1);
-                                comp->unroll(k1,-1);
-                                comp->unroll(i1,-1);
-                            }
-                            if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-    
-                                comp->pipeline(iterator_map[2],1);
-                                comp->unroll(i1,-1);
-                                comp->unroll(j1,-1);
-                            }
-                            
-
-                        }
-                        for(auto &part:comp->components){
-                            part.first->set_schedule(part.first->original_schedule);
-                            part.first->set_loop_level_names(part.first->original_loop_level_name);
-                            comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                                part.first->after(comp,k1);
-                                comp->pipeline(i1,1);
-                                comp->unroll(k1,-1);
-                                comp->unroll(j1,-1);
-                            }
-                            
-                        
-                        }
-                        if(this->leader_computations.size() == 1){
-                        // std::cout<<"we got here in if"<<std::endl;
-                            
-                            this->evaluate_func();
-                            if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
-                                this->best_latency = this->current_latency;
-                                this->best_dsp_usage = this->dsp_usage;
-
-                                std::cout<<"best_latency:  "<<std::endl;
-                                std::cout<<best_latency<<std::endl;
-                                this->dump_schedule(path);
-                                // this->best_ast = this->get_isl_ast();
-                                // comp->best_schedule = comp->get_schedule();
-                                // comp->best_tile_map = comp->tile_map;
-                                // comp->best_tile_size_map = comp->tile_size_map;
-                                // comp->best_directive_map = comp->directive_map;
-                                // comp->best_directive_tool_map = comp->directive_tool_map;
-                                // comp->best_loop_level_names = comp->get_loop_level_names();
-                                // comp->best_unroll_factor = comp->unroll_factor;
-                                // comp->best_unroll_dimension = comp->unroll_dimension;
-                            }
-                            
-                            if(this->dsp_max>this->dsp_usage){
-                                larger_factor = true;
-                                // auto_DSE_tile_size(new_comp, factor);
-                            }
-
-                        }else{
-                                auto new_comp = this->evaluate_func();
-                                if(new_comp != comp && this->dsp_max>this->dsp_usage){
-                                    // larger_factor = false;
-                                    auto_DSE_tile_size(new_comp, 1,path);
-                                }else{
-                                    this->best_latency = this->current_latency;
-                                    this->best_dsp_usage = this->dsp_usage;
-
-                                    std::cout<<"best_latency:  "<<std::endl;
-                                    std::cout<<this->best_latency<<std::endl;
-                                    this->dump_schedule(path);
-                                    auto latency = comp->latency;
-                                    int dsp = comp->dsp;
-                                    std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                                    myfile << tile_size[0] << ",";
-                                    myfile << tile_size[1] << ",";
-                                    myfile << tile_size[2] << ",";
-                                    myfile << latency<< ",";
-                                    myfile << this->dsp_usage << "\n";
-                                }
-                            }
-                        
-                        auto latency = comp->latency;
-                        int dsp = comp->dsp;
-                        
-                        std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                        myfile << tile_size[0] << ",";
-                        myfile << tile_size[1] << ",";
-                        myfile << latency<< ",";
-                        myfile << this->dsp_usage << "\n";
-
-                    }
-                    
-                }
-            }
-        }
-        }
-        if(larger_factor == true){
-            std::cout<<"forth: "<<std::endl;
-            if(this->dsp_max>this->dsp_usage){
-                for(auto &tile_size: tilesize_list){
-                    comp->set_schedule(comp->original_schedule);
-                    comp->set_loop_level_names(comp->original_loop_level_name);
-                    comp->directive_map.clear();
-                    comp->is_unrolled = false;
-                    comp->unroll_factor.clear();
-                    comp->unroll_dimension.clear();
-                    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-                
-
-                    if(tile_size[0]<=128 && tile_size[1]<=128){
-                        comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-
-                        if(comp->components.size()==0){
-                            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                                // part.first->after(comp,k1);
-                                comp->pipeline(k0,1);
-                                comp->unroll(i1,-1);
-                                comp->unroll(k1,-1);
-                                comp->unroll(j1,-1);
-                            }
-                            
-
-                        }
-                        for(auto &part:comp->components){
-                            part.first->set_schedule(part.first->original_schedule);
-                            part.first->set_loop_level_names(part.first->original_loop_level_name);
-                            comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                                part.first->after(comp,k1);
-                                comp->pipeline(k0,1);
-                                comp->unroll(i1,-1);
-                                comp->unroll(k1,-1);
-                                comp->unroll(j1,-1);
-                            }
-                            
-                        
-                        }
-                        if(this->leader_computations.size() == 1){
-                        // std::cout<<"we got here in if"<<std::endl;
-                            
-                            this->evaluate_func();
-                            if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
-                                this->best_latency = this->current_latency;
-                                this->best_dsp_usage = this->dsp_usage;
-
-                                std::cout<<"best_latency:  "<<std::endl;
-                                std::cout<<best_latency<<std::endl;
-                                this->dump_schedule(path);
-                                // this->best_ast = this->get_isl_ast();
-                                // comp->best_schedule = comp->get_schedule();
-                                // comp->best_tile_map = comp->tile_map;
-                                // comp->best_tile_size_map = comp->tile_size_map;
-                                // comp->best_directive_map = comp->directive_map;
-                                // comp->best_directive_tool_map = comp->directive_tool_map;
-                                // comp->best_loop_level_names = comp->get_loop_level_names();
-                                // comp->best_unroll_factor = comp->unroll_factor;
-                                // comp->best_unroll_dimension = comp->unroll_dimension;
-                            }
-                            
-                            if(this->dsp_max>this->dsp_usage){
-                                larger_factor = true;
-                                // auto_DSE_tile_size(new_comp, factor);
-                            }
-
-                        }else{
-                                auto new_comp = this->evaluate_func();
-                                if(new_comp != comp && this->dsp_max>this->dsp_usage){
-                                    // larger_factor = false;
-                                    auto_DSE_tile_size(new_comp, 1,path);
-                                }else{
-                                    this->best_latency = this->current_latency;
-                                    this->best_dsp_usage = this->dsp_usage;
-
-                                    std::cout<<"best_latency:  "<<std::endl;
-                                    std::cout<<this->best_latency<<std::endl;
-                                    this->dump_schedule(path);
-                                    auto latency = comp->latency;
-                                    int dsp = comp->dsp;
-                                    std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                                    myfile << tile_size[0] << ",";
-                                    myfile << tile_size[1] << ",";
-                                    myfile << tile_size[2] << ",";
-                                    myfile << latency<< ",";
-                                    myfile << this->dsp_usage << "\n";
-                                }
-                            }
-
-                        
-                        auto latency = comp->latency;
-                        int dsp = comp->dsp;
-                        
-                        std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                        myfile << tile_size[0] << ",";
-                        myfile << tile_size[1] << ",";
-                        myfile << latency<< ",";
-                        myfile << this->dsp_usage << "\n";
-
-                    }
-                    
-                }
-        }
-        }
-        
-        if(larger_factor == true){
-            // std::cout<<"finished???"<<std::endl;
-            factor = factor+1;
-            comp->set_schedule(comp->original_schedule);
-            comp->set_loop_level_names(comp->original_loop_level_name);
-            comp->directive_map.clear();
-            comp->unroll_factor.clear();
-            comp->unroll_dimension.clear();
-            comp->is_unrolled = false;
-            if(this->dsp_max>this->dsp_usage && factor<=2){
-                this->auto_DSE_tile_size(comp,factor,path);
-                
-            }
+        //     }
             
-        }
+        // }
         myfile.close();
 
 
 
     }
     else if(size == 2){
-        for(int j = 0; j<6+factor; j++){
-            std::cout<<"factor size: ";
-            std::cout<<factor;
-            factor1 = pow(2,j);
-            factor2 = scale/factor1;
-            tilesize_list.push_back({factor1,factor2});
-            std::cout<<"tile factor: ";
-            std::cout<<factor1;
-            std::cout<<"; ";
-            std::cout<<factor2<<std::endl;
+        // for(int j = 0; j<6+factor; j++){
+        //     std::cout<<"factor size: ";
+        //     std::cout<<factor;
+        //     factor1 = pow(2,j);
+        //     factor2 = scale/factor1;
+        //     tilesize_list.push_back({factor1,factor2});
+        //     std::cout<<"tile factor: ";
+        //     std::cout<<factor1;
+        //     std::cout<<"; ";
+        //     std::cout<<factor2<<std::endl;
             
-        }
+        // }
+        tilesize_list.push_back({2,2});
         bool larger_factor = true;
         for(auto &tile_size: tilesize_list){
             comp->set_schedule(comp->original_schedule);
@@ -2110,13 +1919,16 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
             comp->is_unrolled = false;
             comp->unroll_factor.clear();
             comp->unroll_dimension.clear();
+            comp->tile_map.clear();
+            comp->tile_size_map.clear();
+            comp->access_map.clear();
             // this->gen_c_code();
             var i0("i0"), j0("j0"), i1("i1"), j1("j1");
             // std::cout<<"tile factor: ";
             // std::cout<<tile_size[0];
             // std::cout<<"; ";
             // std::cout<<tile_size[1]<<std::endl;
-            if(tile_size[0]<=256 && tile_size[1]<=256){
+            if(tile_size[0]<32 && tile_size[1]<32){
                 comp->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
                 // std::cout<<iterator_map[0].get_name()<<std::endl;
                 // std::cout<<iterator_map[1].get_name()<<std::endl;
@@ -2124,21 +1936,21 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                     part.first->set_schedule(part.first->original_schedule);
                     part.first->set_loop_level_names(part.first->original_loop_level_name);
                     // std::cout<<"here!!!!!!!!"<<std::endl;
-                    auto iterators = part.first->get_iteration_variables();
-                    int size = iterators.size();
-                    std::map<int,polyfp::var> iterator_map;
-                    for(auto &iter: iterators){
-                        int loc = part.first->get_loop_level_number_from_dimension_name(iter.get_name());
-                        iterator_map[loc] = iter;
-                    }
+                    // auto iterators = part.first->get_iteration_variables();
+                    // int size = iterators.size();
+                    // std::map<int,polyfp::var> iterator_map;
+                    // for(auto &iter: iterators){
+                    //     int loc = part.first->get_loop_level_number_from_dimension_name(iter.get_name());
+                    //     iterator_map[loc] = iter;
+                    // }
                     part.first->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
                     // std::cout<<"here!!!!!!!!"<<std::endl;
                     if(tile_size[1]!=1){
-                            part.first->after(comp,j1);
-                            
-                            comp->pipeline(j1,1);
+                        part.first->after(comp,j1);
+                        
+                        comp->pipeline(j1,1);
                     }else{
-                        std::cout<<tile_size[1]<<std::endl;
+                        // std::cout<<tile_size[1]<<std::endl;
                         part.first->after(comp,i1);
                         comp->pipeline(i1,1);
                     }
@@ -2171,7 +1983,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         // auto_DSE_tile_size(new_comp, factor);
                     }
 
-                }else{
+                }else{  std::cout<<"before evaluate";
                         auto new_comp = this->evaluate_func();
                         if(new_comp != comp && this->dsp_max>this->dsp_usage){
                             // larger_factor = false;
@@ -2417,7 +2229,8 @@ polyfp::compute * polyfp::function::update_latency(){
 void polyfp::function::codegen()
 {
     // this->set_arguments(arguments);
-
+    this->gen_loop_location();
+    // this->gen_loop_location();
     this->gen_time_space_domain();
     this->gen_isl_ast();
     this->gen_c_code();

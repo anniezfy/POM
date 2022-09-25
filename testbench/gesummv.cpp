@@ -1,42 +1,77 @@
+#include <isl/set.h>
+#include <isl/map.h>
+#include <isl/union_map.h>
+#include <isl/union_set.h>
+#include <isl/ast_build.h>
+#include <isl/schedule.h>
+#include <isl/schedule_node.h>
+#include <isl/space.h>
+#include <isl/constraint.h>
 
-//===------------------------------------------------------------*- C++ -*-===//
-//
-// Automatically generated file for High-level Synthesis (HLS).
-//
-//===----------------------------------------------------------------------===//
-
-#include <algorithm>
-#include <ap_axi_sdata.h>
-#include <ap_fixed.h>
-#include <ap_int.h>
-#include <hls_math.h>
-#include <hls_stream.h>
-#include <math.h>
-#include <stdint.h>
+#include <map>
 #include <string.h>
+#include <stdint.h>
+#include <unordered_map>
+#include <unordered_set>
+#include <sstream>
+#include <iostream>
+#include <string>
 
+#include "expr.h"
+#include "compute.h"
+#include "function.h"
+#include "core.h"
+// #include "mlir/IR/Attributes.h"
 using namespace std;
+using namespace polyfp;
+int main(){
+    init("gesummv");
+    auto *fct = global::get_implicit_function();
+    var i("i", 0 ,4096);
+    var j("j", 0 ,4096);
+    var k("k", 0 ,4096);
+    placeholder temp("temp",{4096},p_float32);
+    placeholder A("A",{4096,4096},p_float32);
+    placeholder B("B",{4096,4096},p_float32);
+    placeholder C("C",{4096,4096},p_float32);
+    placeholder x("x",{4096},p_float32);
+    placeholder y("y",{4096},p_float32);
+    constant alpha(1.6);
+    constant beta(3.7);
+    compute s_1("s_1",{i,j},temp(i)+A(i,j)*x(j),temp(i));
+    compute s_2("s_2",{i,j},y(i)+B(i,j)*x(j),y(i));
+    // compute s_3("s_3",{i},alpha*temp(i)+beta*y(i),y(i));
+    // compute s_1("s_1",{i,j},alpha,temp(i));
+    // compute s_2("s_2",{i,j},alpha,y(i));
+    // compute s_3("s_3",{i},alpha,y(i));
+    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+    s_2.after(s_1,j);
+    // s_3.after(s_1,-1);
+    // s_1.tile(i,j,8,16,i0, j0,i1, j1);
+    // s_2.tile(i,j,8,16,i0, j0,i1, j1);
+    // s_2.after(s_1,j1);
+    // s_2.unroll(k1,-1);
+    // s_2.unroll(j1,-1);
+    // s_2.unroll(i1,-1);
+    // s_2.pipeline(k0,1);
+    // A.partition({16,8},"cyclic");
+    // B.partition({8,1},"cyclic");
+    // C.partition({16,1},"cyclic");
 
-void gesummv(
-  double v0,
-  double v1,
-  double v2[32][32],
-  double v3[32][32],
-  double v4[32],
-  double v5[32],
-  double v6[32]
-) {	// L2
-  for (int v7 = 0; v7 < 3; v7 += 1) {	// L3
-    for (int v8 = 0; v8 < 3; v8 += 1) {	// L4
-      for (int v9 = 0; v9 < 7; v9 += 1) {	// L5
-        for (int v10 = 0; v10 < 7; v10 += 1) {	// L6
-          double v11 = v2[v9][v10];	// L7
-          v3[v9][v10] = v11;	// L8
-          double v12 = v2[(v9 - 1)][v10];	// L9
-          v3[v9][v10] = v12;	// L10
-        }
-      }
-    }
-  }
+    
+    fct->auto_DSE("/home/POM/samples/gesummv/");
+    // codegen();
 }
-
+// C code:
+// for (int i = 0; i < N; i++) {
+//   for (int j = 0; j < N; j++) {
+//     C[i][j] *= beta;
+//   }
+// }
+// for (int i = 0; i < N; i++) {
+//   for (int j = 0; j < N; j++) {
+//     for (int k = 0; k < N; k++) {
+//       C[i][j] += alpha * A[i][k] * B[k][j];
+//     }
+//   }
+// }

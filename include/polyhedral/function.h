@@ -129,6 +129,7 @@ private:
     std::vector<polyfp::placeholder *> function_arguments;
 
 
+
     /**
       * A map representing the buffers of the function. Some of these
       * buffers are passed to the function as arguments and some are
@@ -482,6 +483,14 @@ public:
     std::map<int,int> resource_map;
     std::vector<std::vector<int>> paths;
 
+    int get_global_location(){
+        return global_location;
+    }
+
+    void set_global_location(int new_location){
+        this->global_location = new_location;
+    }
+
     void dump_schedule(std::string path);
 
     long longest_path;
@@ -491,6 +500,11 @@ public:
     int best_dsp_usage;
     long best_latency;
     long current_latency;
+
+
+    int global_location;
+    bool one_compute;
+
     /**
      * \brief Construct a function called \p name.
      * \details Function names should not start with _ (an underscore).
@@ -643,6 +657,8 @@ public:
       * specified.
       */
     void gen_time_space_domain();
+
+    void gen_loop_location();
     std::string get_name();
 
     void allocate_and_map_buffers_automatically();

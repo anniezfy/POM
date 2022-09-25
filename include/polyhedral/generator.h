@@ -113,7 +113,9 @@ public:
     // std::map<std::string, mlir::Type > argument_list;
     std::vector<std::string> argument_list;
     std::map<std::string,mlir::Value> argument_map;
+    std::map<std::string,int> array_map;
     std::map<std::string,mlir::Value> get_argument_map();
+    std::map<std::string,int> get_array_map();
 
     std::vector<mlir::memref::AllocOp> allocs;
     std::vector<mlir::FuncOp> funcs;

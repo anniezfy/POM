@@ -330,8 +330,10 @@ void compute::update_names(std::vector<std::string> original_loop_level_names, s
         DEBUG_NO_NEWLINE_NO_INDENT(3, polyfp::str_dump(n + " "));
     }
     DEBUG_NEWLINE(3);
-
+    this->final_loop_level_names.clear();
+    this->final_loop_level_names = original_loop_level_names;
     this->set_loop_level_names(original_loop_level_names);
+
 //    this->name_unnamed_time_space_dimensions();
 
     DEBUG(3, polyfp::str_dump("Names updated. New names are: "));
@@ -1025,9 +1027,11 @@ void polyfp::compute::init_computation(std::string iteration_space_str,
     this->is_leaf = true;
     this->has_a_leader = false;
     fct->leader_computations.push_back(this);
+    this->after_level = -2;
 
 
     fct->add_computation(this);
+
     this->set_identity_schedule_based_on_iteration_domain();
     this->set_expression(e);
 
@@ -1039,8 +1043,17 @@ void polyfp::compute::init_computation(std::string iteration_space_str,
     // get a conflict.
     for (int i = 0; i< this->get_iteration_domain_dimensions_number(); i++)
         this->set_schedule_domain_dim_names({i}, {generate_new_variable_name()});
-    for (int i = 0; i< nms.size(); i++)
+    for (int i = 0; i< nms.size(); i++){
         this->set_loop_level_names({i}, {nms[i]});
+        this->final_loop_level_names.push_back(nms[i]);
+        // if(fct->get_body().size() == 1){
+        //     this->iterators_location_map.insert(std::make_pair(nms[i],i));
+        //     fct->global_location = nms.size();
+        // }
+        
+    }
+    
+        
 
     this->updates.push_back(this);
 
@@ -2077,33 +2090,38 @@ void compute::tile(polyfp::var L0, polyfp::var L1, polyfp::var L2,
 
     this->tile(dimensions[0], dimensions[1], dimensions[2],
                sizeX, sizeY, sizeZ);
-    if(sizeX == 1 && sizeY == 1 ){
-        this->update_names(original_loop_level_names, {L0.get_name(), L1.get_name(), L2_outer.get_name(),
-                                                       L2_inner.get_name()}, dimensions[0], 3);
+    // if(sizeX == 1 && sizeY == 1 ){
+    //     this->update_names(original_loop_level_names, {L0.get_name(), L1.get_name(), L2_outer.get_name(),
+    //                                                    L2_inner.get_name()}, dimensions[0], 3);
 
-    }
-    else if(sizeX == 1 && sizeZ == 1 ){
-        this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2.get_name(),
-                                                       L1_inner.get_name()}, dimensions[0], 3);
+    // }
+    // else if(sizeX == 1 && sizeZ == 1 ){
+    //     this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2.get_name(),
+    //                                                    L1_inner.get_name()}, dimensions[0], 3);
 
-    }else if(sizeY == 1 && sizeZ == 1 ){
-        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2.get_name(),
-                                                       L0_inner.get_name()}, dimensions[0], 3);
+    // }else if(sizeY == 1 && sizeZ == 1 ){
+    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2.get_name(),
+    //                                                    L0_inner.get_name()}, dimensions[0], 3);
 
-    }else if(sizeX == 1){
-        this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2_outer.get_name(),
-                                                    L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    }else if(sizeY == 1){
-        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2_outer.get_name(),
-                                                    L0_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    }else if(sizeZ == 1){
-        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2.get_name(),
-                                                    L0_inner.get_name(), L1_inner.get_name()}, dimensions[0], 3);
-    }else{
-        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
+    // }else if(sizeX == 1){
+    //     this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2_outer.get_name(),
+    //                                                 L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
+    // }else if(sizeY == 1){
+    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2_outer.get_name(),
+    //                                                 L0_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
+    // }else if(sizeZ == 1){
+    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2.get_name(),
+    //                                                 L0_inner.get_name(), L1_inner.get_name()}, dimensions[0], 3);
+    // }else{
+    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
+    //                                             L0_inner.get_name(), L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
+    // }
+    this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
                                                 L0_inner.get_name(), L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    }
-
+    // this->final_loop_level_names.clear();
+    // this->final_loop_level_names = this->get_loop_level_names();
+    // std::cout<<this->get_name();
+    // std::cout<<this->final_loop_level_names.size()<<std::endl;
 
     this->access_map.insert(std::pair(L0.get_name(),L0_inner.get_name()));
     this->access_map.insert(std::pair(L1.get_name(),L1_inner.get_name()));
@@ -2204,6 +2222,9 @@ void compute::tile(polyfp::var L0, polyfp::var L1,
     // this->placeholder_dims.push_back(polyfp::var(L1_inner.get_name()));
     // this->placeholder_dims.push_back(L0_outer*sizeX+L0_inner);
     // this->placeholder_dims.push_back(L1_outer*sizeY+L1_inner);
+    // this->final_loop_level_names.clear();
+    // this->final_loop_level_names = this->get_loop_level_names();
+    
     this->access_map.insert(std::pair(L0.get_name(),L0_inner.get_name()));
     this->access_map.insert(std::pair(L1.get_name(),L1_inner.get_name()));
     this->tile_map.insert(std::pair(L0_inner.get_name(),L0_outer.get_name()));
@@ -2592,6 +2613,47 @@ void polyfp::compute::after(compute &comp, polyfp::var level)
     DEBUG(3, polyfp::str_dump("The loop level that corresponds to " +
         level.get_name() + " is " + std::to_string(dimensions[0])));
 
+
+    int current_level = dimensions[0];
+
+    auto leader_dim_map = comp.iterators_location_map;
+    this->after_level = current_level;
+    std::cout<<"after_level";
+    std::cout<<current_level;
+    // for(int i=0; i<dim_list.size(); i++){
+    //     if(counter <= current_level){
+    //         this->iterators_location_map.insert(std::make_pair(dim_list[counter],leader_dim_map[dim_list[counter]]));
+    //     }else{
+    //         auto fct = global::get_implicit_function();
+    //         auto next_level = fct->global_location;
+    //         // std::cout<<next_level<<std::endl;
+    //         this->iterators_location_map.insert(std::make_pair(dim_list[counter],next_level));
+    //         fct->global_location += 1;
+    //     }
+    //     counter+=1;
+    // }
+    // std::map<std::string, int>::iterator iter;
+    // std::vector<std::string> iterator_list;
+    // for(auto &name: this->get_loop_level_names()){
+    //     if(name == level.get_name()){
+    //         iterator_list.push_back(name);
+    //         this->iterators_location_map[name] = comp.iterators_location_map[name];
+    //         // break;
+    //     }else{
+    //         iterator_list.push_back(name);
+    //         iter = comp.iterators_location_map.find(name);
+    //         if(iter != this->iterators_location_map.end()){
+    //             this->iterators_location_map[name] = comp.iterators_location_map[name];
+    //         }else{
+    //             this->iterators_location_map[name] = comp.iterators_location_map[name];
+    //         }
+    //     }
+    //     // 
+    // }
+
+
+
+
     this->after(comp, dimensions[0]);
 
     DEBUG_INDENT(-4);
@@ -2611,8 +2673,14 @@ void polyfp::compute::after(compute *comp, polyfp::var level)
     DEBUG(3, polyfp::str_dump("The loop level that corresponds to " +
         level.get_name() + " is " + std::to_string(dimensions[0])));
 
+    
+    int current_level = dimensions[0];
+    int counter = 0;
+    auto leader_dim_map = comp->iterators_location_map;
+    this->after_level = current_level;
+    std::cout<<"current_level: ";
+    std::cout<<current_level;
     this->after(comp, dimensions[0]);
-
     DEBUG_INDENT(-4);
 }
 
@@ -2623,49 +2691,25 @@ void polyfp::compute::after(compute &comp, int level)
 
     DEBUG(3, polyfp::str_dump("Scheduling " + this->get_name() + " to be executed after " +
                                 comp.get_name() + " at level " + std::to_string(level)));
-    // polyfp::str_dump("Scheduling " + this->get_name() + " to be executed after " +
-    //                             comp.get_name() + " at level " + std::to_string(level));                            
-
     auto &graph = this->get_function()->sched_graph;
-
     auto &edges = graph[&comp];
-
     auto level_it = edges.find(this);
-
-    // if (level_it != edges.end())
-    // {
-    //     if (level_it->second > level)
-    //     {
-    //         level = level_it->second;
-    //     }
-    // }
-
     edges[this] = level;
-
 
     this->get_function()->starting_computations.erase(this);
     // todo
     // this->get_function()->sched_graph_reversed[this][&comp] = level;
-
-
-
+    this->after_level = level;
     if(level != -1){
-
         std::vector<polyfp::compute *>::iterator iter2 = this->get_function()->leader_computations.begin();
-
-        while(iter2 != this->get_function()->leader_computations.end())
-        {
-            if(*iter2 == this)
-            {
+        while(iter2 != this->get_function()->leader_computations.end()){
+            if(*iter2 == this){
                 iter2 = this->get_function()->leader_computations.erase(iter2);
             }
-            else
-            {
+            else{
                 iter2++;
-            }
-            
+            }      
         }
-        
         // cout << "Not found" << endl;
         // this->get_function()->leader_computations.erase(this);
         this->is_leader = false;
@@ -2689,6 +2733,7 @@ void polyfp::compute::after(compute &comp, int level)
     }else if(level == -1){
         this->is_leader = true;
         this->has_a_leader = false;
+        this->is_top_parent = false;
         this->leader = NULL; 
         comp.is_leaf = false;
         auto iter = comp.components.find (this) ;
@@ -2696,14 +2741,24 @@ void polyfp::compute::after(compute &comp, int level)
             iter = comp.components.erase (iter);
             comp.delete_leader_components(this);
         }
-            
-        
+        //TODO: check if it is in lead_comp list
+        // int current_level = level;
+        // int counter = 0;
+        // auto dim_list = this->get_loop_level_names();
+        // auto leader_dim_map = comp.iterators_location_map;
+        // for(int i=0; i<dim_list.size(); i++){
+        //     auto fct = global::get_implicit_function();
+        //     auto next_level = fct->global_location;
+        //     this->iterators_location_map.insert(std::make_pair(dim_list[counter],next_level));
+        //     fct->global_location+=1;
+        //     counter+=1;
+        // }
+
+
+
 
     }
     
-
-
-
     assert(this->get_function()->sched_graph_reversed[this].size() < 2 &&
             "Node has more than one predecessor.");
 
@@ -2740,30 +2795,25 @@ void polyfp::compute::after(compute *comp, int level)
     // }
 
     edges[this] = level;
-
+    
 
 
     this->get_function()->starting_computations.erase(this);
+    this->after_level = level;
 
 
-    if(level != -1){
-        // this->get_function()->leader_computations.erase(this);
-
+     if(level != -1){
         std::vector<polyfp::compute *>::iterator iter2 = this->get_function()->leader_computations.begin();
-
-        while(iter2 != this->get_function()->leader_computations.end())
-        {
-            if(*iter2 == this)
-            {
+        while(iter2 != this->get_function()->leader_computations.end()){
+            if(*iter2 == this){
                 iter2 = this->get_function()->leader_computations.erase(iter2);
             }
-            else
-            {
+            else{
                 iter2++;
-            }
-            
+            }      
         }
-
+        // cout << "Not found" << endl;
+        // this->get_function()->leader_computations.erase(this);
         this->is_leader = false;
         this->is_top_parent = false;
         this->has_a_leader = true;
@@ -2785,6 +2835,7 @@ void polyfp::compute::after(compute *comp, int level)
     }else if(level == -1){
         this->is_leader = true;
         this->has_a_leader = false;
+        this->is_top_parent = false;
         this->leader = NULL; 
         comp->is_leaf = false;
         auto iter = comp->components.find (this) ;
@@ -2792,21 +2843,11 @@ void polyfp::compute::after(compute *comp, int level)
             iter = comp->components.erase (iter);
             comp->delete_leader_components(this);
         }
-            
-        
-
     }
-
-
-
     assert(this->get_function()->sched_graph_reversed[this].size() < 2 &&
             "Node has more than one predecessor.");
-
     DEBUG(10, polyfp::str_dump("sched_graph[" + comp->get_name() + ", " +
-                                 this->get_name() + "] = " + std::to_string(level)));
-    // polyfp::str_dump("sched_graph[" + comp.get_name() + ", " +
-    //                              this->get_name() + "] = " + std::to_string(level));                             
-
+                                 this->get_name() + "] = " + std::to_string(level)));                          
     DEBUG_INDENT(-4);
 }
 

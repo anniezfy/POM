@@ -33,55 +33,35 @@ int main(){
     var k("k", 0 ,4096);
 
     placeholder A("A",{4096,4096},p_float32);
+    placeholder B("B",{4096},p_float32);
     constant factor(9);
     constant alpha(1.6);
     constant beta(3.7);
-    // constant beta(3.7);
-   //  expr = A(i-1,j+1)+A(i,j-1)
-    // compute s_1("s_1",{k,i,j},A(i-1,j-1)+A(i-1,j), A(i,j));
-
-
-    // using value = std::variant<int, bool,double, std::string>;
-    // std::vector<value> values;
-    // values.push_back(3.1415926);
-    // // std::vector<value> values = {0, true, 3.1415926,"hello"};
-    // auto out = values.back();
-    // const int index = out.index();
-    // std::cout<<index<<std::endl;
-    // const int test = index;
-    // std::cout<<test<<std::endl;
-    // if(index==2){
-    //     auto tep = std::get<2>(out);
-    // std::cout<<tep<<std::endl;
-    // }
-    
 
     // compute s_1("s_1",{k,i,j},(A(i-1,j-1)+A(i-1,j))*(A(i-1,j+1)+A(i,j-1)), A(i,j));
-    compute s_1("s_1",{k,i,j},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,j));
-    expr e = (A(i-1,j)+alpha)*(beta+A(i-1,j));
-    e.dump(true);
-    // s_4.interchange(j,k);
-    // compute s_1("s_1",{i,j},beta,A(i,j));
-    // compute s_1_1("s_1_1",{i,j},beta,E(i,j));
-    // compute s_2("s_2",{i,j},alpha*A(i,k),B(i,j));
-    // compute s_3("s_3",{i,j},B(i,j)*beta,C(i,j));
-    // compute s_4("s_4",{i,j},C(i,j)+E(i,j),D(i,j));
-    // s_2.get_expr().get_access_vector();
-
-    // s_1_1.after(s_1,j);
-    // s_2.after(s_1,-1);
-    // s_3.after(s_2,-1);
-    // s_4.after(s_3,-1);
-
-    // s_4.tile(i,j,1,4);
-    
-    s_1.pipeline(k,1);
-    // s_2.pipeline(j,1);
-    // A.partition({1,6},"cyclic");
-
-    A.partition({4,4},"cyclic");
-    // s_2.after(s_1,j);
-    // fct->auto_DSE(" /home/POM/samples/gemm/");
+    compute s_1("s_1",{i,j},factor, A(i,j));
+    compute s_2("s_2",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,k));
+    compute s_3("s_3",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,j));
+    compute s_4("s_4",{i},factor, B(i));
+    compute s_5("s_5",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,k));
+    compute s_6("s_6",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,j));
+    s_2.after(s_1,i);
+    s_3.after(s_2,j);
+    s_4.after(s_3,i);
+    s_5.after(s_1,-1);
+    s_6.after(s_5,i);
+    // for(auto &kv: s_1.iterators_location_map){
+    //     std::cout<<kv.first+" ";
+    //     std::cout<<kv.second<<std::endl;
+    // }
+    // for(auto &kv: s_2.iterators_location_map){
+    //     std::cout<<kv.first+" ";
+    //     std::cout<<kv.second<<std::endl;
+    // }
+    // for(auto &kv: s_3.iterators_location_map){
+    //     std::cout<<kv.first+" ";
+    //     std::cout<<kv.second<<std::endl;
+    // }
     
     codegen();
     
