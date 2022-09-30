@@ -430,7 +430,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
     }else if (isl_ast_node_get_type(node) == isl_ast_node_user)
     {
         bool flag = true;
-        // std::cout<<"enter a user node"<<std::endl;
+        std::cout<<"enter a user node"<<std::endl;
         isl_ast_expr *expr = isl_ast_node_user_get_expr(node);
         isl_ast_expr *arg = isl_ast_expr_get_op_arg(expr, 0);
         isl_id *id = isl_ast_expr_get_id(arg);
@@ -621,7 +621,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             }
         }
         else if (polyfp_expr.get_expr_type() == polyfp::e_op && polyfp_expr.get_op_type() != polyfp::o_access ){            
-            // std::cout<<"We get a e_op here"<<std::endl;
+            std::cout<<"We get a e_op here"<<std::endl;
             mlir::ValueRange indices = {};
             auto a = polyfp_expr.get_operand(0);
             auto b = polyfp_expr.get_operand(1);
@@ -632,6 +632,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             theModule.dump();
             a_print_expr(polyfp_expr, comp, level);
             std::cout<<"We get a e_op1 here"<<std::endl;
+            theModule.dump();
 
             if(if_flag == true){
                 mlir::Value value = ops[2].getInductionVar();
@@ -1994,15 +1995,16 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     manager.mlirGen1(fct,node,level,true, false, false);
     // std::cout<<fct.leader_computations.size()<<std::endl;
     for(auto &comp : fct.leader_computations){
-        int index = fct.leader_computation_index[comp];
+        // int index = fct.leader_computation_index[comp];
         // std::cout<<index<<std::endl;
         for(auto &kv : comp->get_directive_map()){
             if(kv.second == "pipeline"){
-                int loc = comp->get_loop_level_number_from_dimension_name(kv.first);
-                index = loc + index;
-                mlir::scalehls::setLoopDirective(manager.ops[index], true, comp->II, false, false);
-                for(int i=1; i<=loc; i++){
-                    mlir::scalehls::setLoopDirective(manager.ops[index-i], false, comp->II, false, true);
+                int loc_2 = comp->get_loop_level_number_from_dimension_name(kv.first);
+                int loc = comp->iterators_location_map[kv.first];
+                // index = loc + index;
+                mlir::scalehls::setLoopDirective(manager.ops[loc], true, comp->II, false, false);
+                for(int i=1; i<=loc_2; i++){
+                    mlir::scalehls::setLoopDirective(manager.ops[loc-i], false, comp->II, false, true);
                 }
             }
         }             
@@ -2105,7 +2107,7 @@ void gen_mlir(polyfp::function &fct, isl_ast_node *node, int &level){
     if (failed(mlir::verify(*module, false))) {
         module->emitError("module verification error");
     }
-    // module->dump();
+    module->dump();
     std::error_code error;
     std::string s = fct.get_name();
     std::string path = "/home/POM/samples/"+s+"/"+s+".mlir";

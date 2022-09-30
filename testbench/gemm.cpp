@@ -36,12 +36,12 @@ int main(){
     constant alpha(1.6);
     constant beta(3.7);
     // compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
-    compute s_1("s_1",{i,j,k},C(i,j)*beta,C(i,j));
+    compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
     compute s_2("s_2",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
     var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-    s_2.after(s_1,k);
+    s_2.after(s_1,-1);
     // s_1.tile(i,j,k,8,8,16,i0, j0, k0, i1, j1,k1);
-    // s_2.tile(i,j,k,8,8,16,i0, j0, k0, i1, j1,k1);
+    // s_2.tile(i,j,k,8,1,16,i0, j0, k0, i1, j1,k1);
     // s_2.after(s_1,k1);
     // s_2.unroll(k1,-1);
     // s_2.unroll(j1,-1);
@@ -50,6 +50,7 @@ int main(){
     // A.partition({16,8},"cyclic");
     // B.partition({8,1},"cyclic");
     // C.partition({16,1},"cyclic");
+    //TODO:两个都是ijk，after k的时候有问题。
 
     
     fct->auto_DSE("/home/POM/samples/gemm/");

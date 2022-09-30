@@ -36,8 +36,8 @@ int main(){
     constant factor(9);
     // constant beta(3.7);
 
-    compute s_1("s_1",{k,i,j},(A(i-1,j)+A(i-1,j)+A(i-1,j+1)+A(i,j-1)+A(i,j)+A(i,j+1)+A(i+1,j-1)+A(i+1,j)+A(i+1,j+1))*factor,A(i,j));
-    // compute s_1("s_1",{k,i,j},A(i,j)+A(i-1,j)*B(i-2,j)+factor,A(i,j));
+    // compute s_1("s_1",{k,i,j},(A(i-1,j)+A(i-1,j)+A(i-1,j+1)+A(i,j-1)+A(i,j)+A(i,j+1)+A(i+1,j-1)+A(i+1,j)+A(i+1,j+1))*factor,A(i,j));
+    compute s_1("s_1",{k,i,j},A(i,j)+factor,A(i,j));
     var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
     s_1.skew(i,j,1,1,i0,j0);
     // compute s_1("s_1",{i,j},beta,A(i,j));

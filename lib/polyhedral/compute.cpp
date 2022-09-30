@@ -2090,35 +2090,35 @@ void compute::tile(polyfp::var L0, polyfp::var L1, polyfp::var L2,
 
     this->tile(dimensions[0], dimensions[1], dimensions[2],
                sizeX, sizeY, sizeZ);
-    // if(sizeX == 1 && sizeY == 1 ){
-    //     this->update_names(original_loop_level_names, {L0.get_name(), L1.get_name(), L2_outer.get_name(),
-    //                                                    L2_inner.get_name()}, dimensions[0], 3);
+    if(sizeX == 1 && sizeY == 1 ){
+        this->update_names(original_loop_level_names, {L0.get_name(), L1.get_name(), L2_outer.get_name(),
+                                                       L2_inner.get_name()}, dimensions[0], 3);
 
-    // }
-    // else if(sizeX == 1 && sizeZ == 1 ){
-    //     this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2.get_name(),
-    //                                                    L1_inner.get_name()}, dimensions[0], 3);
+    }
+    else if(sizeX == 1 && sizeZ == 1 ){
+        this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2.get_name(),
+                                                       L1_inner.get_name()}, dimensions[0], 3);
 
-    // }else if(sizeY == 1 && sizeZ == 1 ){
-    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2.get_name(),
-    //                                                    L0_inner.get_name()}, dimensions[0], 3);
+    }else if(sizeY == 1 && sizeZ == 1 ){
+        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2.get_name(),
+                                                       L0_inner.get_name()}, dimensions[0], 3);
 
-    // }else if(sizeX == 1){
-    //     this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2_outer.get_name(),
-    //                                                 L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    // }else if(sizeY == 1){
-    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2_outer.get_name(),
-    //                                                 L0_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    // }else if(sizeZ == 1){
-    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2.get_name(),
-    //                                                 L0_inner.get_name(), L1_inner.get_name()}, dimensions[0], 3);
-    // }else{
-    //     this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
-    //                                             L0_inner.get_name(), L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    // }
-    this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
+    }else if(sizeX == 1){
+        this->update_names(original_loop_level_names, {L0.get_name(), L1_outer.get_name(), L2_outer.get_name(),
+                                                    L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
+    }else if(sizeY == 1){
+        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1.get_name(), L2_outer.get_name(),
+                                                    L0_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
+    }else if(sizeZ == 1){
+        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2.get_name(),
+                                                    L0_inner.get_name(), L1_inner.get_name()}, dimensions[0], 3);
+    }else{
+        this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
                                                 L0_inner.get_name(), L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
-    // this->final_loop_level_names.clear();
+    }
+    // this->update_names(original_loop_level_names, {L0_outer.get_name(), L1_outer.get_name(), L2_outer.get_name(),
+    //                                             L0_inner.get_name(), L1_inner.get_name(), L2_inner.get_name()}, dimensions[0], 3);
+    // // this->final_loop_level_names.clear();
     // this->final_loop_level_names = this->get_loop_level_names();
     // std::cout<<this->get_name();
     // std::cout<<this->final_loop_level_names.size()<<std::endl;

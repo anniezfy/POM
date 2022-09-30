@@ -37,6 +37,10 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
 
 ../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
     --scalehls-func-preprocess="top-func=bicg" \
+    --scalehls-reduce-initial-interval \
+    --scalehls-simplify-memref-access \
+    --scalehls-materialize-reduction \
+    --scalehls-promote-buffer \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
 
@@ -78,9 +82,28 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/gesummv/gesummv.mlir\
+    --scalehls-func-preprocess="top-func=gesummv" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gesummv/gesummv.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/2mm/2mm.mlir\
+    --scalehls-func-preprocess="top-func=2mm" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/2mm/2mm.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/jacobi/jacobi.mlir\
+    --scalehls-func-preprocess="top-func=jacobi" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/jacobi/jacobi.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/sediel/sediel.mlir\
+    --scalehls-func-preprocess="top-func=sediel" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/sediel/sediel.cpp
+
+    --scalehls-reduce-initial-interval \
+    --scalehls-simplify-memref-access \
+    --scalehls-materialize-reduction \
+    --scalehls-promote-buffer \
 
 /////////////////////////////////////
 gemm:
@@ -94,14 +117,21 @@ gemm:
 bicg:
 /home/POM/scalehls/polygeist/build/bin/mlir-clang test_bicg.c -function=test_bicg -S \
 -memref-fullrank -raise-scf-to-affine > test_bicg.mlir
-/home/POM/scalehls/build/bin/scalehls-opt test_bicg.mlir -debug-only=scalehls \
+time /home/POM/scalehls/build/bin/scalehls-opt test_bicg.mlir -debug-only=scalehls \
 --scalehls-dse-pipeline="top-func=test_bicg target-spec=../config.json" \
 | /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_bicg.cpp
 
 
 gesummv:
-/home/POM/scalehls/polygeist/build/bin/mlir-clang test_gesummv.c -function=test_gesummv -S \
+time /home/POM/scalehls/polygeist/build/bin/mlir-clang test_gesummv.c -function=test_gesummv -S \
 -memref-fullrank -raise-scf-to-affine > test_gesummv.mlir
-/home/POM/scalehls/build/bin/scalehls-opt test_gesummv.mlir -debug-only=scalehls \
+time /home/POM/scalehls/build/bin/scalehls-opt test_gesummv.mlir -debug-only=scalehls \
 --scalehls-dse-pipeline="top-func=test_gesummv target-spec=../config.json" \
 | /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_gesummv.cpp
+
+test_trmm:
+time /home/POM/scalehls/polygeist/build/bin/mlir-clang test_trmm.c -function=test_trmm -S \
+-memref-fullrank -raise-scf-to-affine > test_trmm.mlir
+time /home/POM/scalehls/build/bin/scalehls-opt test_trmm.mlir -debug-only=scalehls \
+--scalehls-dse-pipeline="top-func=test_trmm target-spec=../config.json" \
+| /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_trmm.cpp
