@@ -536,14 +536,15 @@ void function::gen_loop_location()
 {
     auto leader_list = this->leader_computations;
     for (auto &a_leader : leader_list)
-    {   std::cout << "leader name: ";
-        std::cout << a_leader->get_name() <<'\n';
+    {   
+        // std::cout << "leader name: ";
+        // std::cout << a_leader->get_name() <<'\n';
         if(a_leader->is_leader == true){
-            std::cout <<"enter here" <<'\n';
+            // std::cout <<"enter here" <<'\n';
             // auto comp = a_leader;
-            std::cout <<a_leader->after_level <<'\n';
+            // std::cout <<a_leader->after_level <<'\n';
             if(a_leader->after_level!= -2){
-                std::cout << "get here" <<'\n';
+                // std::cout << "get here" <<'\n';
                 int level = a_leader->after_level;
                 int current_level = level;
                 int counter = 0;
@@ -559,7 +560,7 @@ void function::gen_loop_location()
                     counter+=1;
                 }
             }else{
-                std::cout << a_leader->get_name() <<'\n';
+                // std::cout << a_leader->get_name() <<'\n';
                 // std::vector<std::string> nms = a_leader->get_iteration_domain_dimension_names();
                 auto nms = a_leader->final_loop_level_names;
                 // std::cout <<nms.size()<<'\n';
@@ -573,10 +574,10 @@ void function::gen_loop_location()
             }
             
         }
-        std::cout <<a_leader->iterators_location_map.size()<<'\n';
-        for(auto &map: a_leader->iterators_location_map){
-            std::cout<<map.first<<": "<<map.second<<std::endl;
-        }
+        // std::cout <<a_leader->iterators_location_map.size()<<'\n';
+        // for(auto &map: a_leader->iterators_location_map){
+        //     std::cout<<map.first<<": "<<map.second<<std::endl;
+        // }
             
         auto components = a_leader->components;
         // sort components by their value
@@ -587,11 +588,11 @@ void function::gen_loop_location()
         std::sort(temp.begin(), temp.end(), [](const std::pair<polyfp::compute*, int> &x, const std::pair<polyfp::compute*, int> &y) -> int {
             return x.second < y.second;
         });
-        std::cout <<"components: "<<'\n';
+        // std::cout <<"components: "<<'\n';
         for (auto it = temp.begin(); it != temp.end(); it++)
         {
-            std::cout << it->first->get_name() << ':' << it->second << '\n';
-            std::cout <<it->first->after_level <<'\n';
+            // std::cout << it->first->get_name() << ':' << it->second << '\n';
+            // std::cout <<it->first->after_level <<'\n';
             auto comp = it->first;
             int level = comp->after_level;
             int current_level = level;
@@ -617,9 +618,9 @@ void function::gen_loop_location()
             }else{
 
             }
-            std::cout<<"iterator locations:"<<std::endl;
-            for(auto &map: comp->iterators_location_map)
-                std::cout<<map.first<<map.second<<std::endl;
+            // std::cout<<"iterator locations:"<<std::endl;
+            // for(auto &map: comp->iterators_location_map)
+            //     std::cout<<map.first<<map.second<<std::endl;
         }
         
     }
@@ -1178,21 +1179,25 @@ void function::gen_isl_ast()
                                 isl_union_map_to_str(umap)));
     DEBUG(3, polyfp::str_dump("\n"));
 
-    // polyfp::str_dump("Schedule:", isl_union_map_to_str(this->get_schedule()));
-    // polyfp::str_dump("Iteration domain:",
-    //                             isl_union_set_to_str(this->get_iteration_domain()));
-    // polyfp::str_dump("Trimmed Time-Processor domain:",
-    //                             isl_union_set_to_str(this->get_trimmed_time_processor_domain()));
-    // polyfp::str_dump("Trimmed Time-Processor aligned identity schedule:",
-    //                             isl_union_map_to_str(this->get_aligned_identity_schedules()))  ;        
-    // polyfp::str_dump("Identity schedule intersect trimmed Time-Processor domain:",
-    //                             isl_union_map_to_str(umap));                 
-
+    polyfp::str_dump("Schedule:", isl_union_map_to_str(this->get_schedule()));
+    polyfp::str_dump("Iteration domain:",
+                                isl_union_set_to_str(this->get_iteration_domain()));
+    polyfp::str_dump("Trimmed Time-Processor domain:",
+                                isl_union_set_to_str(this->get_trimmed_time_processor_domain()));
+    polyfp::str_dump("Trimmed Time-Processor aligned identity schedule:",
+                                isl_union_map_to_str(this->get_aligned_identity_schedules()))  ;        
+    polyfp::str_dump("Identity schedule intersect trimmed Time-Processor domain:",
+                                isl_union_map_to_str(umap));    
+    const char *s; 
+    s = "[N,M,K] -> {s_2[i,j,k] -> [0, i, 0, j, 0, k, 10] : 0 <= i <= N and 0 <= j <= M and 0 <= k <= K; s_1[i, j, k] -> [0, i, 0, j, 0, k, 0] : 0 <= i <= N and 0 <= j <= M and 0 <= k <= 1 }";
+    // s_2[0, i, 0, j, 0, k, 0] -> [0, i' = i, 0, j' = j, 0, k' = k, 0] : 0 <= i <= 4095 and 0 <= j <= 4095 and 0 <= k <= 4095; 
+    // s_1[0, i, 0, j, 0, k, 10] -> [0, i' = i, 0, j' = j, 0, k' = k, 10] : 0 <= i <= 4095 and 0 <= j <= 4095 and 0 <= k <= 4095       
+    isl_union_map *fmap = isl_union_map_read_from_str(ctx,s);
 
 
 
     this->ast = isl_ast_build_node_from_schedule_map(ast_build, umap);
-    // std::cout<<this->ast;
+    // std::cout<<umap;
 
 
     isl_ast_build_free(ast_build);
@@ -1212,16 +1217,17 @@ void polyfp::function::dependence_analysis(){
 
 
 void polyfp::function::dfs(int pos, int top, int end, int map[100][100], int n, int v[100],int stack[120])//从pos点开始访问
-{   std::cout<<"DFSING"<<std::endl;
+{   
+    // std::cout<<"DFSING"<<std::endl;
 
 	int i;
 	if(pos==end){//到达终点
-        std::vector<int> path;
+        std::vector<long> path;
 		for(i=0;i<top;i++){
-            std::cout<<stack[i];
+            // std::cout<<stack[i];
             path.push_back(stack[i]);
 		}// printf("%d ",stack[i]);
-        std::cout<<end<<std::endl;
+        // std::cout<<end<<std::endl;
         path.push_back(end);
         this->paths.push_back(path);
 		// printf("%d\n",end);	
@@ -1241,10 +1247,41 @@ void polyfp::function::compute_dependency_graph(){
 
     int map[100][100]={0};
     
-    for(auto &comp_from: this->leader_computations){
-        std::cout<<"leader computation:"+comp_from->get_name()<<std::endl;
+    // for(auto &comp_from: this->leader_computations){
+    //     std::cout<<"leader computation:"+comp_from->get_name()<<std::endl;
+    //     int comp_from_index = this->leader_computation_index[comp_from];
+    //     for(auto &comp_to: this->leader_computations){
+    //         int comp_to_index = this->leader_computation_index[comp_to];
+    //         if(comp_from->get_name()!=comp_to->get_name()){
+    //             bool has_edge = false;
+    //             for(auto &store: comp_from->store_vector){
+    //                 for(auto &load: comp_to->load_vector){
+    //                     if(store->get_name() == load->get_name()){
+    //                         std::cout<<"a new edge from:"+store->get_name()+load->get_name()<<std::endl;
+    //                         has_edge = true;
+    //                     }
+    //                 }
+    //             }
+    //             if(has_edge == true){
+    //                 std::cout<<"a new edge:"+std::to_string(comp_from_index)+std::to_string(comp_to_index)<<std::endl;
+    //                 map[comp_from_index][comp_to_index] = 1;
+    //             }
+    //         }
+    //     }
+    // }
+    std::vector<int> leader_list;
+    int leader_num = this->leader_computations.size();
+    for(int i=0; i<leader_num; i++){
+        auto comp_from = leader_computations[i];
         int comp_from_index = this->leader_computation_index[comp_from];
-        for(auto &comp_to: this->leader_computations){
+        leader_list.push_back(comp_from_index);
+    }
+    for(int i=0; i<leader_num; i++){
+        auto comp_from = leader_computations[i];
+        int comp_from_index = this->leader_computation_index[comp_from];
+        // leader_list.push_back(comp_from_index);
+        for(int j=i; j<leader_num; j++){
+            auto comp_to = leader_computations[j];
             int comp_to_index = this->leader_computation_index[comp_to];
             if(comp_from->get_name()!=comp_to->get_name()){
                 bool has_edge = false;
@@ -1253,19 +1290,21 @@ void polyfp::function::compute_dependency_graph(){
                         if(store->get_name() == load->get_name()){
                             std::cout<<"a new edge from:"+store->get_name()+load->get_name()<<std::endl;
                             has_edge = true;
-                            
                         }
                     }
-
                 }
                 if(has_edge == true){
                     std::cout<<"a new edge:"+std::to_string(comp_from_index)+std::to_string(comp_to_index)<<std::endl;
                     map[comp_from_index][comp_to_index] = 1;
+                    std::vector<int>::iterator it = find(leader_list.begin(), leader_list.end(), comp_to_index);
+                    if ( it!=leader_list.end()){
+                        leader_list.erase(it);
+                    }
+	                    
+                    
                 }
             }
-
         }
-
     }
 
 
@@ -1274,14 +1313,14 @@ void polyfp::function::compute_dependency_graph(){
     for(auto &comp: this->leader_computations){
         if(comp->is_leaf == true){
             leafs.push_back(this->leader_computation_index[comp]);
-            std::cout<<"a leaf node:"+std::to_string(this->leader_computation_index[comp])<<std::endl;
-            
+            std::cout<<"a leaf node:"+std::to_string(this->leader_computation_index[comp])<<std::endl;   
         }
     }
-    for(auto &leaf: leafs){
-        int stack[120],v[100]={0},top=0,n=this->leader_computations.size(),start=0,end=leaf;
-        this->dfs(start,top,end,map,n,v,stack);
-
+    for(auto &leader: leader_list){
+        for(auto &leaf: leafs){
+            int stack[120],v[100]={0},top=0,n=this->leader_computations.size(),start=leader,end=leaf;
+            this->dfs(start,top,end,map,n,v,stack);
+        }
     }
     
     
@@ -1295,15 +1334,89 @@ void polyfp::function::compute_dependency_graph(){
 
 void polyfp::function::auto_DSE(std::string path){
     this->auto_DSE_loop_transformation();
-    auto comp = this->evaluate_func();
+    this->evaluate_func();
+    auto comp = this->update_latency();
     this->best_latency = this->current_latency;
-    this->best_dsp_usage = this->dsp_usage;
+    this->best_dsp_usage = 999;
     // std::cout<<"name of loop level:"+leader_computations[i]->original_loop_level_name[0]<<std::endl;
 
     int factor = 1;
 
     // if(this->leader_computations.size()==1){
-    this->auto_DSE_tile_size(comp,factor,path);  
+    this->auto_DSE_tile_size(comp,factor,path); 
+    
+    for(auto &comp: this->leader_computations){
+        std::cout<< comp->get_name()<<std::endl;
+        std::cout<<"enter here22"<<std::endl;
+        comp->set_schedule(comp->original_schedule);
+        comp->set_loop_level_names(comp->original_loop_level_name);
+        comp->directive_map.clear();
+        comp->is_unrolled = false;
+        comp->unroll_factor.clear();
+        comp->unroll_dimension.clear();
+        comp->tile_map.clear();
+        comp->tile_size_map.clear();
+        comp->access_map.clear();
+        comp->final_loop_level_names.clear();
+        comp->final_loop_level_names = comp->final_loop_level_names_reserved;
+        // std::cout<<"finial names: "<<std::endl;
+        // for (auto n: comp->final_loop_level_names_reserved)
+        // {
+        //     polyfp::str_dump(n + " ");
+        // }
+        // for (auto n: comp->final_loop_level_names)
+        // {
+        //     polyfp::str_dump(n + " ");
+        // }
+        if(comp->is_optimized == true){
+            
+            // std::cout<< comp->final_strategy.size()<<std::endl;
+            if(comp->final_strategy.size()!=0){
+                // std::cout<< "comp->final_strategy.size()"<<std::endl;
+                comp->apply_opt_strategy(comp->final_strategy);
+            }else{
+                // std::cout<< "just pipeline"<<std::endl;
+                auto iterators = comp->get_iteration_variables();
+                int size = iterators.size();
+                std::map<int,polyfp::var> iterator_map;
+                for(auto &iter: iterators){
+                    int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
+                    // int loc = comp->iterators_location_map(iter.get_name());
+                    // std::cout<<iter.get_name()<<std::endl;
+                    iterator_map[loc] = iter;
+                }
+                if(size == 3){
+                    comp->pipeline(iterator_map[2],1);
+                }else if(size == 2){
+                    comp->pipeline(iterator_map[1],1);
+                }
+                
+            }
+            
+            
+        }else{
+            // std::cout<< "just pipeline"<<std::endl;
+            auto iterators = comp->get_iteration_variables();
+            int size = iterators.size();
+            std::map<int,polyfp::var> iterator_map;
+            for(auto &iter: iterators){
+                int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
+                // int loc = comp->iterators_location_map(iter.get_name());
+                // std::cout<<iter.get_name()<<std::endl;
+                iterator_map[loc] = iter;
+            }
+            if(size == 3){
+                comp->pipeline(iterator_map[2],1);
+            }else if(size == 2){
+                comp->pipeline(iterator_map[1],1);
+            }if(size == 1){
+                comp->pipeline(iterator_map[0],1);
+            }
+
+        }
+        
+    }
+    this->dump_schedule(path);
 
     // }
     // else{
@@ -1329,29 +1442,88 @@ void polyfp::function::auto_DSE_loop_transformation(){
 
     for (int i=0; i<this->leader_computations.size(); i++)
     {
-
+        std::cout<<"iteration started:"<<std::endl;
         this->leader_computation_index[leader_computations[i]] = i;
         this->leader_computations[i]->original_schedule = leader_computations[i]->get_schedule();
+        std::vector<std::string> current_name_list = this->leader_computations[i]->get_loop_level_names();
+        int final_size = this->leader_computations[i]->final_loop_level_names.size();
+        int current_size = current_name_list.size();
+        std::cout<<"final_size"<<std::endl;
+        std::cout<<final_size<<std::endl;
+        std::cout<<current_size<<std::endl;
+        if(final_size == current_size){
+            std::cout<<"here???"<<std::endl;
+            // for(this->leader_computations[i]->components){
+            //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
+            // }
+            this->leader_computations[i]->final_loop_level_names = current_name_list;
+            this->leader_computations[i]->final_loop_level_names_reserved = current_name_list;
+        }else if(final_size < current_size){
+            std::cout<<"here?????"<<std::endl;
+            for(int i=0; i<final_size; i++){
+                this->leader_computations[i]->final_loop_level_names[i] = current_name_list[i];
+                this->leader_computations[i]->final_loop_level_names_reserved[i] = current_name_list[i];
+            }
+        }
         this->leader_computations[i]->original_loop_level_name = leader_computations[i]->get_loop_level_names();
-
+        // std::cout<<"here?"<<std::endl;
         for(auto &part:this->leader_computations[i]->components){
+            // std::cout<<"here???"<<std::endl;
             part.first->original_loop_level_name = part.first->get_loop_level_names();
             part.first->original_schedule = part.first->get_schedule();
         }
         std::cout<<"name of loop level:"+leader_computations[i]->original_loop_level_name[0]<<std::endl;
         if(leader_computations[i]->is_leaf == true){
             this->leaf_computations.push_back(leader_computations[i]);
-
-       }
+        }
+        std::cout<<"iteration finished:"<<std::endl;
 
     }
+
+    for(auto &comp:this->get_body()){
+        std::vector<std::string> current_name_list = comp->get_loop_level_names();
+        int final_size = comp->final_loop_level_names.size();
+        int current_size = current_name_list.size();
+        std::cout<<"final_size"<<std::endl;
+        std::cout<<final_size<<std::endl;
+        std::cout<<current_size<<std::endl;
+        if(final_size == current_size){
+            std::cout<<"here???"<<std::endl;
+            // for(this->leader_computations[i]->components){
+            //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
+            // }
+            comp->final_loop_level_names = current_name_list;
+            comp->final_loop_level_names_reserved = current_name_list;
+        }else if(final_size < current_size){
+            for(int i=0; i<final_size; i++){
+                comp->final_loop_level_names[i] = current_name_list[i];
+                comp->final_loop_level_names_reserved[i] = current_name_list[i];
+            }
+        }
+    }
     // this->gen_loop_location();
+    std::cout<<"before compute_dependency_graph:"<<std::endl;
     this->compute_dependency_graph();
+    std::cout<<"after compute_dependency_graph:"<<std::endl;
+    // for(auto &path: this->paths){
+    //     for(auto &num: path){
+    //         std::cout<<num;
+    //     }
+    //     std::cout<<std::endl;
+    // }
     //TODO: Original schedule and Original dimension: iterators and loop_level_name
    
 
 }
 void polyfp::function::dump_schedule(std::string path){
+    for(auto &comp: this->get_body()){
+        comp->iterators_location_map.clear();
+        this->global_location = 0;
+    }
+    this->gen_loop_location();
+    this->gen_time_space_domain();
+    this->gen_isl_ast();
+
     mlir::MLIRContext context;
     auto manager = polyfp::MLIRGenImpl(context);
     int level = 0;
@@ -1404,10 +1576,10 @@ void polyfp::function::dump_schedule(std::string path){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
                 // int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
                 // int loc = fct.leader_computation_index[comp];
-                std::cout<<comp->unroll_dimension[i].get_name();
+                // std::cout<<comp->unroll_dimension[i].get_name();
                 int loc = comp->iterators_location_map[comp->unroll_dimension[i].get_name()];
-                std::cout<<"loc"<<std::endl;
-                std::cout<<loc<<std::endl;
+                // std::cout<<"loc"<<std::endl;
+                // std::cout<<loc<<std::endl;
                 // loc = loc + bias;
                 if(comp->unroll_factor[i] != -1){
                     mlir::loopUnrollUpToFactor(manager.ops[loc],comp->unroll_factor[i]);
@@ -1452,6 +1624,19 @@ void polyfp::function::dump_schedule(std::string path){
 
     mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
 
+
+    for(auto &loop: manager.start_loops_position ){
+        // std::cout<<"loop: "+std::to_string(loop)<<std::endl;
+        // std::cout<<"size: "+std::to_string(manager.ops.size())<<std::endl;
+        mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[loop],manager.funcs[0]);
+        // manager.getModule().dump(); 
+        auto latency = mlir::scalehls::getTiming(manager.ops[loop]).getLatency();
+        std::cout<<"latency: "+std::to_string(latency)<<std::endl;
+        auto dspNum = mlir::scalehls::getResource(manager.ops[loop]).getDsp();
+        std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
+    }
+            
+
     auto module = manager.getModule();
     // mlir::verify(module);
     // if (mlir::failed(mlir::verify(module))) {
@@ -1464,17 +1649,121 @@ void polyfp::function::dump_schedule(std::string path){
     std::string s = this->get_name();
     // std::string path = "/home/jason/Hope/samples/"+s+".mlir";
     std::string path1 = path+s+".mlir";
-    std::cout<<path1<<std::endl;
+    // std::cout<<path1<<std::endl;
     llvm::raw_fd_ostream os(path1, error);
     os << *module;
 
 }
-polyfp::compute * polyfp::function::evaluate_func(){
-    // this->
+void polyfp::function::evaluate_func(){
+    std::cout<<"start evaluation: "<<std::endl;
     for(auto &comp: this->get_body()){
         comp->iterators_location_map.clear();
         this->global_location = 0;
     }
+    // for(auto &comp: this->leader_computations){
+    //     // std::cout<<"enter here1"<<std::endl;
+    //     // std::cout<<comp->get_name()<<std::endl;
+    //     // std::cout<<comp->final_strategy.size()<<std::endl;
+    //     if(comp->is_optimized == true && this->current_opt_comp->get_name()!=comp->get_name() && comp->final_strategy.size()!=0){
+    //         std::cout<<"enter here1"<<std::endl;
+    //         comp->set_schedule(comp->original_schedule);
+    //         comp->set_loop_level_names(comp->original_loop_level_name);
+    //         comp->directive_map.clear();
+    //         comp->is_unrolled = false;
+    //         comp->unroll_factor.clear();
+    //         comp->unroll_dimension.clear();
+    //         comp->tile_map.clear();
+    //         comp->tile_size_map.clear();
+    //         comp->access_map.clear();
+    //         comp->apply_opt_strategy(comp->final_strategy);
+    //     }
+        
+    // }
+
+    for(auto &comp: this->leader_computations){
+        // std::cout<< comp->get_name()<<std::endl;
+        // std::cout<<"enter here2"<<std::endl;
+        // std::cout<<"enter here3"<<std::endl;
+        if(comp->is_optimized == true && this->current_opt_comp!= NULL &&this->current_opt_comp->get_name()!=comp->get_name()){
+            // std::cout<<"enter here4"<<std::endl;
+            comp->set_schedule(comp->original_schedule);
+            comp->set_loop_level_names(comp->original_loop_level_name);
+            comp->directive_map.clear();
+            comp->is_unrolled = false;
+            comp->unroll_factor.clear();
+            comp->unroll_dimension.clear();
+            comp->tile_map.clear();
+            comp->tile_size_map.clear();
+            comp->access_map.clear();
+            comp->final_loop_level_names.clear();
+            comp->final_loop_level_names = comp->final_loop_level_names_reserved;
+            // std::cout<< comp->final_strategy.size()<<std::endl;
+            if(comp->final_strategy.size()!=0){
+                // std::cout<< "comp->final_strategy.size()"<<std::endl;
+                comp->apply_opt_strategy(comp->final_strategy);
+            }else{
+                // std::cout<< "just pipeline"<<std::endl;
+                auto iterators = comp->get_iteration_variables();
+                int size = iterators.size();
+                std::map<int,polyfp::var> iterator_map;
+                for(auto &iter: iterators){
+                    int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
+                    // int loc = comp->iterators_location_map(iter.get_name());
+                    // std::cout<<iter.get_name()<<std::endl;
+                    iterator_map[loc] = iter;
+                }
+                if(size == 3){
+                    comp->pipeline(iterator_map[2],1);
+                }else if(size == 2){
+                    comp->pipeline(iterator_map[1],1);
+                }else if(size == 1){
+                    comp->pipeline(iterator_map[0],1);
+                }
+                
+            }
+            
+            
+        }
+        else if(this->current_opt_comp!= NULL && this->current_opt_comp->get_name()!=comp->get_name()){
+            // std::cout<<"enter here5"<<std::endl;
+            comp->set_schedule(comp->original_schedule);
+            comp->set_loop_level_names(comp->original_loop_level_name);
+            comp->directive_map.clear();
+            comp->is_unrolled = false;
+            comp->unroll_factor.clear();
+            comp->unroll_dimension.clear();
+            comp->tile_map.clear();
+            comp->tile_size_map.clear();
+            comp->access_map.clear();
+            comp->final_loop_level_names.clear();
+            comp->final_loop_level_names = comp->final_loop_level_names_reserved;
+            // std::cout<< "just pipeline"<<std::endl;
+            auto iterators = comp->get_iteration_variables();
+            int size = iterators.size();
+            std::map<int,polyfp::var> iterator_map;
+            for(auto &iter: iterators){
+                int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
+                // int loc = comp->iterators_location_map(iter.get_name());
+                // std::cout<<iter.get_name()<<std::endl;
+                iterator_map[loc] = iter;
+            }
+            if(size == 3){
+                comp->pipeline(iterator_map[2],1);
+            }else if(size == 2){
+                comp->pipeline(iterator_map[1],1);
+            }else if(size == 1){
+                comp->pipeline(iterator_map[0],1);
+            }
+        }
+        // else{
+        //     std::cout<<"?????????"<<std::endl;
+        // }
+    }
+
+
+
+
+
     this->gen_loop_location();
     this->gen_time_space_domain();
     this->gen_isl_ast();
@@ -1491,7 +1780,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
 
     
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);
-    // manager.getModule().dump();
+
     for(auto &comp : this->leader_computations){
         int index = this->leader_computation_index[comp];
         int position = manager.start_loops_position[index];
@@ -1508,6 +1797,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
                 if(kv.second == "pipeline"){
                     int loc_2 = comp->get_loop_level_number_from_dimension_name(kv.first);
                     int loc = comp->iterators_location_map[kv.first];
+
                     // index = loc + index;
                     mlir::scalehls::setLoopDirective(manager.ops[loc], true, comp->II, false, false);
                     for(int i=1; i<=loc_2; i++){
@@ -1538,14 +1828,16 @@ polyfp::compute * polyfp::function::evaluate_func(){
     //     }
     // }
     for(auto &comp: this->leader_computations){
+        // std::cout<<"comp->get_name()"<<std::endl;
         if(comp->is_unrolled == true){
+            // std::cout<<"is_unrolled"<<std::endl;
             for(int i=0; i<comp->unroll_dimension.size(); i++){
                 // int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
                 // int loc = fct.leader_computation_index[comp];
-                std::cout<<comp->unroll_dimension[i].get_name();
+                // std::cout<<comp->unroll_dimension[i].get_name();
                 int loc = comp->iterators_location_map[comp->unroll_dimension[i].get_name()];
-                std::cout<<"loc"<<std::endl;
-                std::cout<<loc<<std::endl;
+                // std::cout<<"loc"<<std::endl;
+                // std::cout<<loc<<std::endl;
                 // loc = loc + bias;
                 if(comp->unroll_factor[i] != -1){
                     mlir::loopUnrollUpToFactor(manager.ops[loc],comp->unroll_factor[i]);
@@ -1573,7 +1865,7 @@ polyfp::compute * polyfp::function::evaluate_func(){
       llvm::errs() << "support an object in the target spec json file, found "
                       "something else\n";
     }
-    unsigned maxDspNum =ceil(configObj->getInteger("dsp").getValueOr(220)*1.1);
+    unsigned maxDspNum =ceil(configObj->getInteger("dsp").getValueOr(220));
     this->dsp_max = maxDspNum;
     llvm::StringMap<int64_t> latencyMap;
     mlir::scalehls::getLatencyMap(configObj, latencyMap);
@@ -1593,18 +1885,23 @@ polyfp::compute * polyfp::function::evaluate_func(){
         auto latency = mlir::scalehls::getTiming(manager.ops[loop]).getLatency();
         // std::cout<<"latency: "+std::to_string(latency)<<std::endl;
         auto dspNum = mlir::scalehls::getResource(manager.ops[loop]).getDsp();
+        // std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
         auto minII = mlir::scalehls::getLoopInfo(manager.ops[loop]).getMinII();
+        // std::cout<<"minII: "+std::to_string(minII)<<std::endl;
         this->leader_computations[loc]->latency = latency;
         this->leader_computations[loc]->dsp = dspNum;
         this->leader_computations[loc]->minII = minII;
 
-        total_dsp+=dspNum;
+        // total_dsp+=dspNum;
         total_latency+=latency;
         this->latency_map[loc] = latency;
         this->resource_map[loc] = dspNum;
         loc+=1;
         
     }
+    mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
+    total_dsp = mlir::scalehls::getResource(manager.funcs[0]).getDsp();
+    // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[loop],manager.funcs[0]);
     // for(auto &comp: this->leader_computations){
     //     int index = this->leader_computation_index[comp];
     //     mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[index],manager.funcs[0]);
@@ -1629,52 +1926,152 @@ polyfp::compute * polyfp::function::evaluate_func(){
     //     }  
     // }
     this->dsp_usage = total_dsp;
+
     this->current_latency = total_latency;
     // manager.getModule().dump(); 
     // std::cout<<"!!!!!!!11!!!!!!"<<std::endl;
     // manager.getModule().dump();
-    return this->update_latency();
+    // return this->update_latency();
 
 
 }
 
 
 void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std::string path){
+    std::cout<<"Currently optimized compute: "<<comp->get_name()<<std::endl;
+    int scale;
+
+    
+    comp->set_schedule(comp->original_schedule);
+    comp->set_loop_level_names(comp->original_loop_level_name);
+    comp->directive_map.clear();
+    comp->is_unrolled = false;
+    comp->unroll_factor.clear();
+    comp->unroll_dimension.clear();
+    comp->tile_map.clear();
+    comp->tile_size_map.clear();
+    comp->access_map.clear();
+    
+    //TODO: SKEW MAP
+    std::map<int,polyfp::var> iterator_map;
     auto iterators = comp->get_iteration_variables();
     int size = iterators.size();
-    std::map<int,polyfp::var> iterator_map;
+    // if(size == 3){
+    //     scale = 8*pow(2,factor-1);
+    // }else{
+    //     scale = 8*pow(2,factor-1);
+    //     // comp->largest_factor = 5;
+    // }
+    scale = 16*pow(2,factor-1);
     for(auto &iter: iterators){
         int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
+        // int loc = comp->iterators_location_map(iter.get_name());
+        // std::cout<<iter.get_name()<<std::endl;
         iterator_map[loc] = iter;
+    }
+
+    if(comp->is_optimized == true ){
+        // std::cout<<"is opted"<<std::endl;
+        // std::cout<<comp->current_factor<<std::endl;
+        // std::cout<<comp->largest_factor<<std::endl;
+        if(comp->current_factor < comp->largest_factor && comp->opt_finished == false){
+            std::cout<<"continue opt"<<std::endl;
+            // std::cout<<comp->current_factor<<std::endl;
+            // std::cout<<comp->largest_factor<<std::endl;
+            comp->current_factor+=1;
+            factor = comp->current_factor;
+            // if(size == 3){
+            //     scale = 8*pow(2,comp->current_factor-1);
+            // }else{
+            //     scale = 8*pow(2,comp->current_factor-1);
+            // }
+            scale = 16*pow(2,comp->current_factor-1);
+            // scale = 16*pow(2,comp->current_factor-1);
+            // scale = comp->current_factor*2;
+            // comp->current_factor=scale;
+        }else{
+            std::cout<<"finish opt"+comp->get_name()<<std::endl;
+            this->finish_list.push_back(comp->get_name());
+            if(comp->current_strategy.size()!=0){
+                // std::cout<<"final strategy"<<std::endl;
+                comp->final_strategy = comp->current_strategy;
+            }else{
+                // std::cout<<"no final strategy"<<std::endl;
+                
+            }
+            
+            int path_index = this->get_longest_path();
+            std::vector<long> current_longest_path = paths[path_index];
+            std::vector<long> current_longest_path_latency;
+            std::map<long, int> current_longest_map;
+            int num = current_longest_path.size();
+            
+            for(int i=0; i<num; i++){
+                long temp_latency = this->latency_map[current_longest_path[i]];
+                current_longest_path_latency.push_back(temp_latency);
+                current_longest_map.insert(std::make_pair(temp_latency,current_longest_path[i]));
+            }
+            std::sort(current_longest_path_latency.begin(),current_longest_path_latency.end(),std::greater<long>());
+
+            
+            for(int i=0; i<num; i++){
+                // int node_index = current_longest_path[i]; 
+                // std::cout<<"the node index"+std::to_string(node_index);
+                // int final_index = this->path_map[path_index][node_index];
+                int final_index = current_longest_map[current_longest_path_latency[i]];
+                std::cout<<"the final_index"+std::to_string(final_index);
+                std::map<polyfp::compute *,int>::iterator it;
+                polyfp::compute *comp;
+                for( it= this->leader_computation_index.begin();it!=this->leader_computation_index.end();it++) {
+                    if(it->second==final_index){
+                        comp = it->first;
+                        std::string name = comp->get_name();
+                        std::cout<<"finished list"<<std::endl;
+                        if (std::find(finish_list.begin(), finish_list.end(), name) == finish_list.end()){
+                            std::cout<<"new comp list:"+comp->get_name()<<std::endl;
+                            auto_DSE_tile_size(comp, 1,path);
+
+                            return;
+                        }   
+                    }
+                        
+                } 
+            }       
+            
+            return;
+            //get_the_second_compute
+        }
+
+    }
+    // else if(comp->is_pipelined == false){
+    //     // std::cout<<"??????????????????"<<std::endl;
+        
+    //     if(size== 3){
+    //         comp->pipeline(iterator_map[2],1);
+    //     }else if(size == 2){
+    //         comp->pipeline(iterator_map[1],1);
+    //     }
+    //     comp->is_pipelined = true;
+
+    // }
+    else{
+        comp->is_optimized = true;
+        comp->current_factor = factor;
     }
 
     int factor1=1;
     int factor2=1;
     int factor3=1;
-    int max_dim = 0;
-    for(auto &iter: comp->get_iteration_variables()){
-        int dim = iter.get_upper().get_int32_value();
-        if(max_dim<dim){
-            max_dim = dim;
-        }
-    }
-    //upper bound:like 4096
-    // std::cout<<"upper bound:";
-    // std::cout<<max_dim<<std::endl;
-    // if(max_dim>=500){
-        int scale = 128*pow(2,factor-1);
-    // }
-    
+
     std::vector<std::vector<int>> tilesize_list;
-    // std::string errorMessage;      
-    // auto csvFile = mlir::openOutputFile("/home/jason/Hope/samples/dse_test.csv", &errorMessage);
-    // if (!csvFile)
-    //     return;
-    // auto &os = csvFile->os();
+    std::vector<int> current_design;
+    std::vector<int> final_design;
+
+    // std::vector<int> final_strategy;
+    // std::vector<int> current_strategy;
 
     // Print header row.
     std::string s = this->get_name();
-    // std::string path = "/home/jason/Hope/samples/"+s+".mlir";
     std::string path1 = path+s+".csv";
     std::ifstream ifs(path1,std::ios::in);
     char ch;
@@ -1692,28 +2089,34 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
     }
  
     if(size == 3){
-        for(int i = 0; i<6+factor; i++){
+        //todo, here 4 is desided by the scale
+
+        //config: 5,3
+        for(int i = 0; i<5+factor; i++){
             factor1 = pow(2,i);
-            for(int j = 0; j<6+factor-i; j++){
+            for(int j = 0; j<3+factor-i; j++){
                 factor2 = pow(2,j);
                 factor3 = scale/factor2/factor1;
                 tilesize_list.push_back({factor1,factor2,factor3});
+                std::cout<<"tile factor: ";
+                std::cout<<factor1;
+                std::cout<<"; ";
+                std::cout<<factor2;
+                std::cout<<"; ";
+                std::cout<<factor3<<std::endl;
             }
         }
         // tilesize_list.push_back({1,8,16});
-        // tilesize_list.push_back({1,16,8});
-        // tilesize_list.push_back({2,4,16});
-        // tilesize_list.push_back({2,8,8});
-        // tilesize_list.push_back({2,8,8});
+        // tilesize_list.push_back({1,16,4});
+        // tilesize_list.push_back({2,2,4});
+        // tilesize_list.push_back({2,4,8});
         // tilesize_list.push_back({2,8,8});
         // tilesize_list.push_back({4,2,16});
         bool larger_factor = true;
-        // long best_latency = LONG_MAX;
-        // //TODO
-        // int best_dsp = 9999;
         if(larger_factor == true){
             std::cout<<"current computation: "+comp->get_name()<<std::endl;
             for(auto &tile_size: tilesize_list){
+                // comp->after_level = -2;
                 comp->set_schedule(comp->original_schedule);
                 comp->set_loop_level_names(comp->original_loop_level_name);
                 comp->directive_map.clear();
@@ -1723,9 +2126,12 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 comp->tile_map.clear();
                 comp->tile_size_map.clear();
                 comp->access_map.clear();
-                // comp->after_level = -2;
+                comp->opt_finished = false;
+                //add
+                // comp->final_strategy.clear();
+
                 var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-                if(tile_size[0]<64 && tile_size[1]<64 && tile_size[2]<64){
+                if(tile_size[0]<16 && tile_size[1]<32 && tile_size[2]<32){
                     comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
                     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
                         comp->pipeline(k0,1);
@@ -1752,21 +2158,6 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         part.first->set_schedule(part.first->original_schedule);
                         part.first->set_loop_level_names(part.first->original_loop_level_name);
                         part.first->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
-                        // if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        //     part.first->after(comp,k1);
-                        //     // comp->pipeline(i1,1);
-                        //     // comp->unroll(k1,-1);
-                        //     // comp->unroll(j1,-1);
-                        // }
-                        // if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        //     part.first->after(comp,k1);
-                        // }
-                        // if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
-                        //     part.first->after(comp,k1);
-                        // }
-                        // if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
-                        //     part.first->after(comp,k1);
-                        // }
                         if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
                             part.first->after(comp,j1);
                         }else{
@@ -1774,87 +2165,91 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         }
                     }
                     int II = 1;
+                    this->current_opt_comp = comp;
                     if(this->leader_computations.size() == 1){                          
-                        // this->evaluate_func();
-                        // if(this->dsp_max < this->dsp_usage){
-                        //     int new_II= this->dsp_usage / this->dsp_max;
-                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        //         comp->pipeline(k0,new_II);
-                        //     }
-                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
-                        //         comp->pipeline(k0,new_II);
-                        //     }
-                        //     if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
-                        //         comp->pipeline(k0,new_II);
-                        //     }
-                        //     if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        //         comp->pipeline(iterator_map[2],new_II);
-                        //     }
-                        //     II = new_II;
-                        // }
-                        // this->evaluate_func();
-                        // if(this->dsp_max < this->dsp_usage){
-                        //     int new_II= this->dsp_usage / this->dsp_max +1;
-                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        //         comp->pipeline(k0,new_II);
-                        //     }
-                        //     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
-                        //         comp->pipeline(k0,new_II);
-                        //     }
-                        //     if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
-                        //         comp->pipeline(k0,new_II);
-                        //     }
-                        //     if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        //         comp->pipeline(iterator_map[2],new_II);
-                        //     }
-                        //     II = new_II;
-                        // }
                         this->evaluate_func();
                         if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
                             this->best_latency = this->current_latency;
                             this->best_dsp_usage = this->dsp_usage;
-                            std::cout<<"best_latency:  "<<std::endl;
+                            std::cout<<"best_latency:  ";
                             std::cout<<best_latency<<std::endl;
                             this->dump_schedule(path);
-                            // this->best_ast = this->get_isl_ast();
-                            // comp->best_schedule = comp->get_schedule();
-                            // comp->best_tile_map = comp->tile_map;
-                            // comp->best_tile_size_map = comp->tile_size_map;
-                            // comp->best_directive_map = comp->directive_map;
-                            // comp->best_directive_tool_map = comp->directive_tool_map;
-                            // comp->best_loop_level_names = comp->get_loop_level_names();
-                            // comp->best_unroll_factor = comp->unroll_factor;
-                            // comp->best_unroll_dimension = comp->unroll_dimension;
                         }
-                        
-                        // if(this->dsp_max>this->dsp_usage){
-                        //     larger_factor = true;
-                        //     // auto_DSE_tile_size(new_comp, factor);
-                        // }
 
-                    }else{
-                        std::cout<<"enter else: "+comp->get_name()<<std::endl;
-                        auto new_comp = this->evaluate_func();
-                        if(new_comp != comp && this->dsp_max>this->dsp_usage){
-                            // larger_factor = false;
-                            auto_DSE_tile_size(new_comp, 1,path);
+                    }else{  
+                        // std::cout<<"before evaluation"<<std::endl;
+                        this->evaluate_func();
+                        // std::cout<<"after evaluation"<<std::endl;
+                        // auto new_comp = this->update_latency();
+                        polyfp::compute * new_comp = NULL;
+
+                        int path_index = this->get_longest_path();
+                        std::vector<long> current_longest_path = paths[path_index];
+                        std::vector<long> current_longest_path_latency;
+                        std::map<long, int> current_longest_map;
+                        int num = current_longest_path.size();
+                        
+                        for(int i=0; i<num; i++){
+                            long temp_latency = this->latency_map[current_longest_path[i]];
+                            current_longest_path_latency.push_back(temp_latency);
+                            current_longest_map.insert(std::make_pair(temp_latency,current_longest_path[i]));
+                        }
+                        std::sort(current_longest_path_latency.begin(),current_longest_path_latency.end(),std::greater<long>());
+                        bool comp_flag = false;
+                        for(int i=0; i<num; i++){
+                            // int node_index = current_longest_path[i]; 
+                            // int final_index = this->path_map[path_index][node_index];
+                            int final_index = current_longest_map[current_longest_path_latency[i]];
+                            std::cout<<"the final_index"+std::to_string(final_index);
+                            std::map<polyfp::compute *,int>::iterator it;
+                            polyfp::compute *comp;
+                            for( it= this->leader_computation_index.begin();it!=this->leader_computation_index.end();it++) {
+                                if(it->second==final_index){
+                                    comp = it->first;
+                                    std::string name = comp->get_name();
+                                    // std::cout<<"finished list"<<std::endl;
+                                    if (std::find(finish_list.begin(), finish_list.end(), name) == finish_list.end()){
+                                        // std::cout<<"new comp list"<<std::endl;
+                                        std::cout<<"new comp list:"+comp->get_name()<<std::endl;
+                                        // auto_DSE_tile_size(comp, 1,path);
+                                        new_comp = comp;
+                                        comp_flag = true;
+                                        
+                                        break;
+                                    }   
+                                }
+                                    
+                            } 
+                            if(comp_flag == true){
+                                break;
+                            }
+                        }        
+                        if(new_comp == NULL){
+                            return;
+                        }
+
+                        if(new_comp != comp && this->dsp_max>=this->dsp_usage){
+                            std::cout<<"comp changed"<<std::endl;
+                            // if(this->best_dsp_usage>=this->dsp_usage){
+                            if(this->current_latency < this->best_latency){
+                                std::cout<<"final_strategy"<<std::endl;
+                                this->best_latency = this->current_latency;
+                                final_design = tile_size;
+                                break;
+                                // comp->final_strategy = tile_size;
+                            }
+                            // auto_DSE_tile_size(new_comp, 1,path);
                         }else if(new_comp == comp &&this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
                             this->best_latency = this->current_latency;
                             this->best_dsp_usage = this->dsp_usage;
-
-                            std::cout<<"best_latency:  "<<std::endl;
-                            std::cout<<this->best_latency<<std::endl;
-                            this->dump_schedule(path);
+                            // comp->current_strategy = tile_size;
+                            current_design = tile_size;
+                            // std::cout<<"best_latency:  "<<std::endl;
+                            // std::cout<<this->best_latency<<std::endl;
+                            // this->dump_schedule(path);
                             auto latency = comp->latency;
                             int dsp = comp->dsp;
                             std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                            // myfile << tile_size[0] << ",";
-                            // myfile << tile_size[1] << ",";
-                            // myfile << tile_size[2] << ",";
-                            // myfile << latency<< ",";
-                            // myfile << this->dsp_usage << ",";
-                            // myfile << comp->minII << "\n";
-
                         }
                     }
                     
@@ -1872,31 +2267,33 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 }
                 
             }
+            if(final_design.size()!=0){
+                // std::cout<<"final_strategy: "+comp->get_name()<<std::endl;
+                std::cout<<"final_strategy: "+comp->get_name();
+                std::cout<<final_design[0];
+                std::cout<<final_design[1];
+                std::cout<<final_design[2]<<std::endl;
+                comp->final_strategy = final_design;
+                comp->apply_opt_strategy(comp->final_strategy);
+                this->evaluate_func();
+                auto new_comp = this->update_latency();
+                auto_DSE_tile_size(new_comp, 1,path);
+            }else if(current_design.size()!=0){
+                comp->current_strategy = current_design;
+                // std::cout<<"current_strategy: "+comp->get_name()<<std::endl;
+                auto_DSE_tile_size(comp, 1,path);
+            }else if(current_design.size()==0){
+                // std::cout<<"current_empty: "+comp->get_name()<<std::endl;
+                comp->opt_finished = true;
+                auto_DSE_tile_size(comp, 1,path);
+
+            }
 
         }
-
-        // if(larger_factor == true){
-        //     // std::cout<<"finished???"<<std::endl; 
-        //     factor = factor+1;
-        //     comp->set_schedule(comp->original_schedule);
-        //     comp->set_loop_level_names(comp->original_loop_level_name);
-        //     comp->directive_map.clear();
-        //     comp->unroll_factor.clear();
-        //     comp->unroll_dimension.clear();
-        //     comp->is_unrolled = false;
-        //     if(this->dsp_max>this->dsp_usage && factor<=2){
-        //         this->auto_DSE_tile_size(comp,factor,path);
-                
-        //     }
-            
-        // }
         myfile.close();
-
-
-
     }
     else if(size == 2){
-        for(int j = 0; j<6+factor; j++){
+        for(int j = 0; j<2+factor; j++){
             std::cout<<"factor size: ";
             std::cout<<factor;
             factor1 = pow(2,j);
@@ -1913,6 +2310,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
         for(auto &tile_size: tilesize_list){
             comp->set_schedule(comp->original_schedule);
             comp->set_loop_level_names(comp->original_loop_level_name);
+            // auto temp = comp->get_loop_level_names();
             comp->directive_map.clear();
             comp->is_unrolled = false;
             comp->unroll_factor.clear();
@@ -1920,65 +2318,48 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
             comp->tile_map.clear();
             comp->tile_size_map.clear();
             comp->access_map.clear();
+            comp->opt_finished = false;
             // this->gen_c_code();
             var i0("i0"), j0("j0"), i1("i1"), j1("j1");
-            // std::cout<<"tile factor: ";
-            // std::cout<<tile_size[0];
-            // std::cout<<"; ";
-            // std::cout<<tile_size[1]<<std::endl;
-            if(tile_size[0]<=64 && tile_size[1]<=64){
+            if(tile_size[0]<=32 && tile_size[1]<=32){
                 comp->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
-                // std::cout<<iterator_map[0].get_name()<<std::endl;
-                // std::cout<<iterator_map[1].get_name()<<std::endl;
+                if(tile_size[1]!=1&&tile_size[0]!=1){
+                    comp->pipeline(j0,1);
+                    comp->unroll(j1,-1);
+                    comp->unroll(i1,-1);
+                }else if(tile_size[1]==1&&tile_size[0]!=1){
+                    comp->pipeline(iterator_map[1],1);
+                    comp->unroll(i1,-1);
+                }else if(tile_size[0]==1&&tile_size[1]!=1){
+                    comp->pipeline(j0,1);
+                    comp->unroll(j1,-1);
+                }
                 for(auto &part:comp->components){
                     part.first->set_schedule(part.first->original_schedule);
                     part.first->set_loop_level_names(part.first->original_loop_level_name);
-                    // std::cout<<"here!!!!!!!!"<<std::endl;
-                    // auto iterators = part.first->get_iteration_variables();
-                    // int size = iterators.size();
-                    // std::map<int,polyfp::var> iterator_map;
-                    // for(auto &iter: iterators){
-                    //     int loc = part.first->get_loop_level_number_from_dimension_name(iter.get_name());
-                    //     iterator_map[loc] = iter;
-                    // }
                     part.first->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
                     if(tile_size[1]!=1&&tile_size[0]!=1){
                         part.first->after(comp,j1);
-                        comp->pipeline(j0,1);
-                        comp->unroll(j1,-1);
-                        comp->unroll(i1,-1);
                     }else if(tile_size[1]==1&&tile_size[0]!=1){
                         part.first->after(comp,i1);
-                        comp->pipeline(iterator_map[1],1);
-                        comp->unroll(i1,-1);
                     }else if(tile_size[0]==1&&tile_size[1]!=1){
                         part.first->after(comp,j1);
-                        comp->pipeline(j0,1);
-                        comp->unroll(j1,-1);
+                        // codegen();
                     }
                 
                 }
-                if(this->leader_computations.size() == 1){
-                    std::cout<<"we got here in if"<<std::endl;
-                    
+                // codegen();
+                this->current_opt_comp = comp;
+                if(this->leader_computations.size() == -1){
+                    // std::cout<<"we got here in if"<<std::endl;                   
                     this->evaluate_func();
                     if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
                         this->best_latency = this->current_latency;
                         this->best_dsp_usage = this->dsp_usage;
 
-                        std::cout<<"best_latency:  "<<std::endl;
-                        std::cout<<best_latency<<std::endl;
+                        // std::cout<<"best_latency:  "<<std::endl;
+                        // std::cout<<best_latency<<std::endl;
                         this->dump_schedule(path);
-                        
-                        // this->best_ast = this->get_isl_ast();
-                        // comp->best_schedule = comp->get_schedule();
-                        // comp->best_tile_map = comp->tile_map;
-                        // comp->best_tile_size_map = comp->tile_size_map;
-                        // comp->best_directive_map = comp->directive_map;
-                        // comp->best_directive_tool_map = comp->directive_tool_map;
-                        // comp->best_loop_level_names = comp->get_loop_level_names();
-                        // comp->best_unroll_factor = comp->unroll_factor;
-                        // comp->best_unroll_dimension = comp->unroll_dimension;
                     }
                     
                     if(this->dsp_max>this->dsp_usage){
@@ -1986,30 +2367,112 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         // auto_DSE_tile_size(new_comp, factor);
                     }
 
-                }else{  
-                        std::cout<<"before evaluate";
-                        auto new_comp = this->evaluate_func();
-                        if(new_comp != comp && this->dsp_max>this->dsp_usage){
-                            // larger_factor = false;
-                            auto_DSE_tile_size(new_comp, 1,path);
-                        }else if(new_comp == comp &&this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
-                            this->best_latency = this->current_latency;
-                            this->best_dsp_usage = this->dsp_usage;
-
-                            std::cout<<"best_latency:  "<<std::endl;
-                            std::cout<<this->best_latency<<std::endl;
-                            this->dump_schedule(path);
-                            auto latency = comp->latency;
-                            int dsp = comp->dsp;
-                            std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
-                            myfile << tile_size[0] << ",";
-                            myfile << tile_size[1] << ",";
-                            // myfile << tile_size[2] << ",";
-                            myfile << latency<< ",";
-                            myfile << this->dsp_usage << "\n";
-                        }
+                }
+                else{  
+                    std::cout<<"before evaluate"<<std::endl;
+                    this->evaluate_func();
+                    // auto new_comp = this->update_latency();
+                    polyfp::compute * new_comp = NULL;
+                    int path_index = this->get_longest_path();
+                    std::vector<long> current_longest_path = paths[path_index];
+                    std::vector<long> current_longest_path_latency;
+                    std::map<long, int> current_longest_map;
+                    int num = current_longest_path.size();
+                    
+                    for(int i=0; i<num; i++){
+                        long temp_latency = this->latency_map[current_longest_path[i]];
+                        current_longest_path_latency.push_back(temp_latency);
+                        current_longest_map.insert(std::make_pair(temp_latency,current_longest_path[i]));
                     }
-                
+                    std::sort(current_longest_path_latency.begin(),current_longest_path_latency.end(),std::greater<long>());
+                    // int num = current_longest_path.size();
+                    bool comp_flag = false;
+                    for(int i=0; i<num; i++){
+                        // int node_index = current_longest_path[i]; 
+                        // int final_index = this->path_map[path_index][node_index];
+                        int final_index = current_longest_map[current_longest_path_latency[i]];
+                        std::cout<<"the final_index"+std::to_string(final_index);
+                        std::map<polyfp::compute *,int>::iterator it;
+                        polyfp::compute *comp;
+                        for( it= this->leader_computation_index.begin();it!=this->leader_computation_index.end();it++) {
+                            if(it->second==final_index){
+                                comp = it->first;
+                                std::string name = comp->get_name();
+                                // std::cout<<"finished list"<<std::endl;
+                                if (std::find(finish_list.begin(), finish_list.end(), name) == finish_list.end()){
+                                    // std::cout<<"new comp list"<<std::endl;
+                                    std::cout<<"new comp list:"+comp->get_name()<<std::endl;
+                                    // auto_DSE_tile_size(comp, 1,path);
+                                    new_comp = comp;
+                                    comp_flag = true;
+                                    // return;
+                                    break;
+                                }   
+                            }
+                                
+                        } 
+                        if(comp_flag == true){
+                            break;
+                        }
+                    }      
+                    if(new_comp == NULL){
+                        std::cout<<"num.1"<<std::endl;
+                        return;
+                    }
+                    // if(new_comp != comp && this->dsp_max>this->dsp_usage){
+                    //     std::cout<<"num.2"<<std::endl;
+                    //     if(this->current_latency < this->best_latency){
+                    //         // std::cout<<"final_strategy"<<std::endl;
+                    //         this->best_latency = this->current_latency;
+                    //         comp->final_strategy = tile_size;
+                    //     }
+                    //     // auto_DSE_tile_size(new_comp, 1,path);
+                    // }else if(new_comp == comp &&this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
+                    //     std::cout<<"num.3"<<std::endl;
+                    //     this->best_latency = this->current_latency;
+                    //     this->best_dsp_usage = this->dsp_usage;
+                    //     comp->current_strategy = tile_size;
+
+                    //     std::cout<<"best_latency:  "<<std::endl;
+                    //     std::cout<<this->best_latency<<std::endl;
+                    //     // this->dump_schedule(path);
+                    //     auto latency = comp->latency;
+                    //     int dsp = comp->dsp;
+                    //     std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
+                    //     myfile << tile_size[0] << ",";
+                    //     myfile << tile_size[1] << ",";
+                    //     // myfile << tile_size[2] << ",";
+                    //     myfile << latency<< ",";
+                    //     myfile << this->dsp_usage << "\n";
+                    // }
+                    if(new_comp != comp && this->dsp_max>=this->dsp_usage){
+                        std::cout<<"comp changed"<<std::endl;
+                        std::cout<<this->current_latency <<std::endl;
+                        std::cout<<this->best_latency<<std::endl;
+                        auto new_comp = this->update_latency();
+                        // if(this->best_dsp_usage>=this->dsp_usage){
+                        if(this->current_latency < this->best_latency){
+                            std::cout<<"final_strategy"<<std::endl;
+                            this->best_latency = this->current_latency;
+                            std::cout<<tile_size.size()<<std::endl;
+                            final_design = tile_size;
+                            // comp->final_strategy = tile_size;
+                        }
+                        // auto_DSE_tile_size(new_comp, 1,path);
+                    }else if(new_comp == comp &&this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
+                        this->best_latency = this->current_latency;
+                        this->best_dsp_usage = this->dsp_usage;
+                        // comp->current_strategy = tile_size;
+                        current_design = tile_size;
+                        // std::cout<<"best_latency:  "<<std::endl;
+                        // std::cout<<this->best_latency<<std::endl;
+                        // this->dump_schedule(path);
+                        auto latency = comp->latency;
+                        int dsp = comp->dsp;
+                        std::cout<<"schedule: "+std::to_string(tile_size[0])+", "+std::to_string(tile_size[1])+", "+std::to_string(tile_size[2])+": "+std::to_string(latency)+": "+std::to_string(dsp)<<std::endl;
+                    }
+                }
+                std::cout<<"final_strategy size: "+std::to_string(final_design.size());
                 auto latency = comp->latency;
                 int dsp = comp->dsp;
                 
@@ -2021,29 +2484,39 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
             }
             
-            
+
             
         }
-        
-       
-        // std::cout<<"finished"<<std::endl;
-        myfile.close();
-        // if(larger_factor == true){
-        //     // std::cout<<"finished???"<<std::endl;
-        //     factor = factor+1;
-        //     comp->set_schedule(comp->original_schedule);
-        //     comp->set_loop_level_names(comp->original_loop_level_name);
-        //     comp->directive_map.clear();
-        //     comp->unroll_factor.clear();
-        //     comp->unroll_dimension.clear();
-        //     comp->is_unrolled = false;
-        //     if(this->dsp_max>this->dsp_usage && factor<=3){
-        //         this->auto_DSE_tile_size(comp,factor,path);
-                
-        //     }
-            
+        // if(comp->final_strategy.size()!=0){
+        //         // std::cout<<"final_strategy: "+comp->get_name()<<std::endl;
+        //         comp->apply_opt_strategy(comp->final_strategy);
+        //         auto new_comp = this->update_latency();
+        //         auto_DSE_tile_size(new_comp, 1,path);
+        // }else{
+        //         comp->opt_finished = true;
+        //         // std::cout<<"current_strategy: "+comp->get_name()<<std::endl;
+        //         auto_DSE_tile_size(comp, 1,path);
         // }
-        
+        if(final_design.size()!=0){
+                std::cout<<"final_strategy: "+comp->get_name();
+                std::cout<<final_design[0];
+                std::cout<<final_design[1]<<std::endl;
+                comp->final_strategy = final_design;
+                comp->apply_opt_strategy(comp->final_strategy);
+                this->evaluate_func();
+                auto new_comp = this->update_latency();
+                auto_DSE_tile_size(new_comp, 1,path);
+        }else if(current_design.size()!=0){
+            comp->current_strategy = current_design;
+            std::cout<<"current_strategy: "+comp->get_name()<<std::endl;
+            auto_DSE_tile_size(comp, 1,path);
+        }else if(current_design.size()==0){
+            std::cout<<"current_empty: "+comp->get_name()<<std::endl;
+            comp->opt_finished = true;
+            auto_DSE_tile_size(comp, 1,path);
+
+        }
+        myfile.close();
 
 
     }
@@ -2056,17 +2529,18 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
 
 
-bool cmp_value(const std::pair<int, int> left, const std::pair<int,int> right)
+bool cmp_value(const std::pair<int, long> left, const std::pair<int,long> right)
 {
 	return left.second < right.second;
 }
 int polyfp::function::get_longest_path(){
     auto i= std::max_element(this->all_latency_map.begin(),this->all_latency_map.end(),cmp_value);
-    // std::cout << i->first << i->second << std::endl;
+    std::cout << i->first << i->second << std::endl;
     return i->first;
 
 }
-int polyfp::function::get_longest_node(std::vector<int> path){
+
+int polyfp::function::get_longest_node(std::vector<long> path){
     long max_latency = 0;
     long index = 0;
     for(int j=0; j<path.size(); j++){
@@ -2086,30 +2560,46 @@ polyfp::compute * polyfp::function::update_latency(){
     for(int i=0; i<this->paths.size(); i++){
         std::string result = "Latency of path:";
         long sum = 0;
+        std::vector<int> node_list;
         for(int j=0; j<this->paths[i].size(); j++){
+            // std::cout<<"this->paths[i][j]"<<std::endl;
+            // std::cout<<this->paths[i][j]<<std::endl;
             result += std::to_string(this->latency_map[this->paths[i][j]]);
             result += ";";
             sum+=this->latency_map[this->paths[i][j]];
+            node_list.push_back(this->paths[i][j]);
+            
         }
+        this->path_map.insert(std::make_pair(i,node_list));
         result+=std::to_string(sum);
         this->all_latency_map[i] = sum;
         std::cout<<result<<std::endl;
+        // std::cout<<sum<<std::endl;
     }
-    long path_index = this->get_longest_path();
-    long node_index = this->get_longest_node(this->paths[path_index]);
+    // std::cout<<"this->all_latency_map.size()"<<std::endl;
+    // std::cout<<this->all_latency_map.size()<<std::endl;
+    for(auto &pair:this->all_latency_map ){
+        std::cout<<pair.first;
+        std::cout<<", ";
+        std::cout<<pair.second<<std::endl;
+
+    }
+    int path_index = this->get_longest_path();
+    int node_index = this->get_longest_node(this->paths[path_index]);
+    int final_index = this->path_map[path_index][node_index];
     this->longest_path = path_index;
     this->longest_node = node_index;
-    // std::cout<<"path: ";
-    // std::cout<<path_index<<std::endl;
-    // std::cout<<"node: ";
-    // std::cout<<node_index<<std::endl;
+    std::cout<<"path: ";
+    std::cout<<path_index<<std::endl;
+    std::cout<<"node: ";
+    std::cout<<node_index<<std::endl;
 
     std::map<polyfp::compute *,int>::iterator it;
     polyfp::compute *comp;
 
     for( it= this->leader_computation_index.begin();it!=this->leader_computation_index.end();it++) 
 	{
-		if(it->second==node_index)
+		if(it->second==final_index)
 		    
             comp = it->first;
 	} 
@@ -2123,7 +2613,28 @@ polyfp::compute * polyfp::function::update_latency(){
 
 
 void polyfp::function::codegen()
-{
+{   
+    // for(auto &comp:this->get_body()){
+    //     std::vector<std::string> current_name_list = comp->get_loop_level_names();
+    //     int final_size = comp->final_loop_level_names.size();
+    //     int current_size = current_name_list.size();
+    //     // std::cout<<"final_size"<<std::endl;
+    //     // std::cout<<final_size<<std::endl;
+    //     // std::cout<<current_size<<std::endl;
+    //     if(final_size == current_size){
+    //         // std::cout<<"here???"<<std::endl;
+    //         // for(this->leader_computations[i]->components){
+    //         //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
+    //         // }
+    //         comp->final_loop_level_names = current_name_list;
+    //         comp->final_loop_level_names_reserved = current_name_list;
+    //     }else if(final_size < current_size){
+    //         for(int i=0; i<final_size; i++){
+    //             comp->final_loop_level_names[i] = current_name_list[i];
+    //             comp->final_loop_level_names_reserved[i] = current_name_list[i];
+    //         }
+    //     }
+    // }
     // this->set_arguments(arguments);
     this->gen_loop_location();
     // this->gen_loop_location();
@@ -2145,7 +2656,7 @@ void polyfp::function::gen_c_code() const
     p = isl_printer_to_file(this->get_isl_ctx(), stdout);
     p = isl_printer_set_output_format(p, ISL_FORMAT_C);
     
-
+    // std::cout<<this->get_isl_ast()<<std::endl;
     p = isl_printer_print_ast_node(p, this->get_isl_ast());
     isl_printer_free(p);
     polyfp::str_dump("\n\n");

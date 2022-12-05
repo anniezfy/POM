@@ -37,18 +37,19 @@ int main(){
     placeholder y("y",{4096},p_float32);
     constant alpha(1.6);
     constant beta(3.7);
-    compute s_1("s_1",{j,i},temp(i)+A(i,j)*x(j),temp(i));
-    compute s_2("s_2",{j,i},y(i)+B(i,j)*x(j),y(i));
-    compute s_3("s_3",{i},alpha*temp(i)+beta*y(i),y(i));
-    // compute s_1("s_1",{i,j},alpha,temp(i));
+        // compute s_1("s_1",{i,j},alpha,temp(i));
     // compute s_2("s_2",{i,j},alpha,y(i));
     // compute s_3("s_3",{i},alpha,y(i));
+    compute s_1("s_1",{i,j},temp(i)+A(i,j)*x(j),temp(i));
+    compute s_2("s_2",{i,j},y(i)+B(i,j)*x(j),y(i));
+    compute s_3("s_3",{i},alpha*temp(i)+beta*y(i),y(i));
+
     s_2.after(s_1,j);
     s_3.after(s_1,-1);
     // var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
     // s_2.after(s_1,j);
     // s_3.after(s_1,-1);
-    // s_1.tile(j,i,8,16,i0, j0,i1, j1);
+    // s_1.tile(i,j,8,16,i0, j0,i1, j1);
     // s_2.tile(j,i,8,16,i0, j0,i1, j1);
     // s_2.after(s_1,j1);
     // s_1.unroll(j1,-1);

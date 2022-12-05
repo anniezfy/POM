@@ -39,32 +39,31 @@ int main(){
     constant beta(3.7);
     constant scalar(3.7);
     compute s_1("s_1",{i,j},scalar,temp(i,j));
-    compute s_2("s_2",{k,j,i},temp(i,j)+alpha*A(i,k)*B(k,j),temp(i,j));
+    compute s_2("s_2",{k,i,j},temp(i,j)+alpha*A(i,k)*B(k,j),temp(i,j));
     compute s_3("s_3",{i,j},D(i,j)*beta,D(i,j));
-    compute s_4("s_4",{k,j,i},D(i,j)+temp(i,k)*C(k,j),D(i,j));
-    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+    compute s_4("s_4",{k,i,j},D(i,j)+temp(i,k)*C(k,j),D(i,j));
     s_2.after(s_1,-1);
     s_3.after(s_2,-1);
     s_4.after(s_3,-1);
-    // s_3.after(s_1,j);
-    // s_2.after(s_1,-1);
-    // s_4.after(s_2,k);
-    
-    // s_2.tile(k,j,i,2,4,16,i0, j0, k0, i1, j1,k1);
-    // s_4.tile(k,j,i,2,4,16,i0, j0, k0, i1, j1,k1);
-    // s_4.after(s_2,k1);
-    // s_2.after(s_1,k1);
+    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+    // s_2.tile(k,j,i,1,2,16,i0, j0, k0, i1, j1,k1);
+    // s_4.tile(k,j,i,1,2,16,i0, j0, k0, i1, j1,k1);
     // s_2.unroll(k1,-1);
     // s_2.unroll(j1,-1);
     // s_2.unroll(i1,-1);
+    // s_4.unroll(k1,-1);
+    // s_4.unroll(j1,-1);
+    // s_4.unroll(i1,-1);
+    // s_1.pipeline(j,1);
+    // s_1.pipeline(j,1);
     // s_2.pipeline(k0,1);
-    // A.partition({16,2},"cyclic");
-    // B.partition({2,4},"cyclic");
-    // C.partition({2,4},"cyclic");
-    // D.partition({16,4},"cyclic");
+    // s_3.pipeline(j,1);
+    // s_4.pipeline(k0,1);
+    // A.partition({16,1},"cyclic");
+    // B.partition({1,2},"cyclic");
+    // C.partition({1,2},"cyclic");
+    // D.partition({16,2},"cyclic");
     // temp.partition({16,2},"cyclic");
-
-    //TODO这里两两合并也有bug
     fct->auto_DSE("/home/POM/samples/2mm/");
     // codegen();
 }

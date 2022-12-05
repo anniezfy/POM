@@ -309,12 +309,24 @@ void compute::update_names(std::vector<std::string> original_loop_level_names, s
         DEBUG_NO_NEWLINE_NO_INDENT(3, polyfp::str_dump(n + " "));
     }
     DEBUG_NEWLINE(3);
-
+    this->final_loop_level_names.clear();
+    this->final_loop_level_names = this->final_loop_level_names_reserved;
+    // std::cout<<"original names: "<<std::endl;
+    // for (auto n: original_loop_level_names)
+    // {
+    //     polyfp::str_dump(n + " ");
+    // }
+    // std::cout<<"finial names: "<<std::endl;
+    // for (auto n: final_loop_level_names)
+    // {
+    //     polyfp::str_dump(n + " ");
+    // }
+    
     DEBUG(3, polyfp::str_dump("Start erasing from: " + std::to_string(erase_from)));
     DEBUG(3, polyfp::str_dump("Number of loop levels to erase: " + std::to_string(nb_loop_levels_to_erase)));
 
     original_loop_level_names.erase(original_loop_level_names.begin() + erase_from, original_loop_level_names.begin() + erase_from + nb_loop_levels_to_erase);
-
+    final_loop_level_names.erase(final_loop_level_names.begin() + erase_from, final_loop_level_names.begin() + erase_from + nb_loop_levels_to_erase);
     DEBUG_NO_NEWLINE(3, polyfp::str_dump("Original loop level names after erasing loop levels: "));
     for (auto n: original_loop_level_names)
     {
@@ -323,15 +335,25 @@ void compute::update_names(std::vector<std::string> original_loop_level_names, s
     DEBUG_NEWLINE(3);
 
     original_loop_level_names.insert(original_loop_level_names.begin() + erase_from, new_names.begin(), new_names.end());
-
+    final_loop_level_names.insert(final_loop_level_names.begin() + erase_from, new_names.begin(), new_names.end());
     DEBUG_NO_NEWLINE(3, polyfp::str_dump("Original loop level names after inserting the new loop levels: "));
     for (auto n: original_loop_level_names)
     {
         DEBUG_NO_NEWLINE_NO_INDENT(3, polyfp::str_dump(n + " "));
     }
+    // std::cout<<"original names: "<<std::endl;
+    // for (auto n: original_loop_level_names)
+    // {
+    //     polyfp::str_dump(n + " ");
+    // }
+    // std::cout<<"finial names: "<<std::endl;
+    // for (auto n: final_loop_level_names)
+    // {
+    //     polyfp::str_dump(n + " ");
+    // }
     DEBUG_NEWLINE(3);
-    this->final_loop_level_names.clear();
-    this->final_loop_level_names = original_loop_level_names;
+    // this->final_loop_level_names.clear();
+    // this->final_loop_level_names = original_loop_level_names;
     this->set_loop_level_names(original_loop_level_names);
 
 //    this->name_unnamed_time_space_dimensions();
@@ -1046,6 +1068,7 @@ void polyfp::compute::init_computation(std::string iteration_space_str,
     for (int i = 0; i< nms.size(); i++){
         this->set_loop_level_names({i}, {nms[i]});
         this->final_loop_level_names.push_back(nms[i]);
+        this->final_loop_level_names_reserved.push_back(nms[i]);
         // if(fct->get_body().size() == 1){
         //     this->iterators_location_map.insert(std::make_pair(nms[i],i));
         //     fct->global_location = nms.size();
@@ -1420,6 +1443,7 @@ void compute::check_loop_interchange(){
     
     std::cout<<"check_loop_interchange:"<<std::endl;
     for(auto &vector_list : this->map_dependence_vectors){
+        // std::cout<<"???????:"<<std::endl;
         std::vector<std::string> dims_no_dp;
         auto vectors = vector_list.second;
         auto dim_list = vector_list.first->get_access();
@@ -1433,12 +1457,44 @@ void compute::check_loop_interchange(){
                     has_zero = true;
                     zero_number += 1;
                     if (dims_no_dp.size()==0){
-                        dims_no_dp.push_back(dim_list[i].get_name());
+                        // std::cout<<"here1:"<<std::endl;
+                        if(dim_list[i].get_expr_type() == polyfp::e_op){
+
+                            // std::cout<<"here2:"<<std::endl;
+                            if (dim_list[i].get_operand(0).get_expr_type() == polyfp::e_var){
+                                // std::cout<<"here22:"<<std::endl;
+                                dims_no_dp.push_back(dim_list[i].get_operand(0).get_name());
+                                // std::cout<<"here224:"<<std::endl;
+                            }else if(dim_list[i].get_operand(1).get_expr_type() == polyfp::e_var){
+                                // std::cout<<"here233:"<<std::endl;
+                                dims_no_dp.push_back(dim_list[i].get_operand(1).get_name());
+                            }
+                        }
+                        else{
+                            // std::cout<<"here2333:"<<std::endl;
+                            dims_no_dp.push_back(dim_list[i].get_name());
+                        }
+                        
+                        
                     }
                     else{
+                        // std::cout<<"here2334:"<<std::endl;
                         std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),dim_list[i].get_name());
                         if ( iter==dims_no_dp.end()){
-                        dims_no_dp.push_back(dim_list[i].get_name());
+                            // std::cout<<"here3:"<<std::endl;
+                            if(dim_list[i].get_expr_type()==polyfp::e_op){
+
+                                // std::cout<<"here2:"<<std::endl;
+                                if (dim_list[i].get_operand(0).get_expr_type() == polyfp::e_var){
+                                    dims_no_dp.push_back(dim_list[i].get_operand(0).get_name());
+                                }else if(dim_list[i].get_operand(1).get_expr_type() == polyfp::e_var){
+                                    dims_no_dp.push_back(dim_list[i].get_operand(1).get_name());
+                                }
+                            }
+                            else{
+                                dims_no_dp.push_back(dim_list[i].get_name());
+                            }
+                            // std::cout<<"here4:"<<std::endl;
                         }
                     }
 
@@ -1452,13 +1508,33 @@ void compute::check_loop_interchange(){
                 if(vector[i] > 0){
                     has_zero = true;
                     zero_number += 1;
-                    if (new_vector_map.find(&dim_list[i]) == new_vector_map.end()){
-                        new_vector_map[&dim_list[i]] = vector[i];
-                    }else if(new_vector_map[&dim_list[i]]>vector[i]){
-                        new_vector_map[&dim_list[i]] = vector[i];
+                    // std::cout<<"here33434:"<<std::endl;
+                    std::string dim_name;
+                    polyfp::expr temp_dim;
+                    if(dim_list[i].get_expr_type()==polyfp::e_op){
+
+                        // std::cout<<"here2:"<<std::endl;
+                        if (dim_list[i].get_operand(0).get_expr_type() == polyfp::e_var){
+                            dim_name = dim_list[i].get_operand(0).get_name();
+                            temp_dim = dim_list[i].get_operand(0);
+                        }else if(dim_list[i].get_operand(1).get_expr_type() == polyfp::e_var){
+                            dim_name = dim_list[i].get_operand(1).get_name();
+                            temp_dim = dim_list[i].get_operand(1);
+                        }
+                    }else{
+                        dim_name = dim_list[i].get_name();
+                        temp_dim = dim_list[i];
                     }
 
-                    std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),dim_list[i].get_name());
+
+                    if (new_vector_map.find(&temp_dim) == new_vector_map.end()){
+                        new_vector_map[&temp_dim] = vector[i];
+                    }else if(new_vector_map[&temp_dim]>vector[i]){
+                        new_vector_map[&temp_dim] = vector[i];
+                    }
+                    
+                    
+                    std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),dim_name);
                     if ( iter!=dims_no_dp.end()){
                         iter = dims_no_dp.erase(iter);
                     }
@@ -1467,7 +1543,7 @@ void compute::check_loop_interchange(){
             }
             
         }
-        // std::cout<<"new_vector_map:"+ std::to_string(new_vector_map.size())<<std::endl;
+        std::cout<<"new_vector_map:"+ std::to_string(new_vector_map.size())<<std::endl;
         std::vector<std::pair<polyfp::expr *, int>> tmp;
         std::vector<polyfp::expr *> dim_order;
         for (auto& i : new_vector_map)
@@ -1527,9 +1603,9 @@ void compute::check_loop_interchange(){
         }
     }
 
-    if(need_split == true){
+    if(need_split == true && is_legal == true){
         // TODO: if there is no dependency between comp_to_split and other comps(its leader and component), split it from the nested loop
-        std::cout<<"???????"+comp_to_split->get_name();
+        // std::cout<<"???????"+comp_to_split->get_name();
         int top_level = 0;
         for(auto &dim: waiting_list){
 
@@ -1550,7 +1626,7 @@ void compute::check_loop_interchange(){
     }
     if(need_split == false){
         int top_level = 0;
-        std::cout<<"here";
+        // std::cout<<"here";
         for(auto &dim: waiting_list){
 
             int level = this->get_loop_level_number_from_dimension_name(dim);
@@ -1559,10 +1635,10 @@ void compute::check_loop_interchange(){
 
         }
         for(auto &map: this->components){
-            std::cout<<"here22";
+            // std::cout<<"here22";
             int top_level2 = 0;
             for(auto &dim: waiting_list){
-                std::cout<<"here33";
+                // std::cout<<"here33";
                 int level = map.first->get_loop_level_number_from_dimension_name(dim);
                 map.first->interchange(top_level2,level);
                 map.first->after(map.first->leader,this->get_iteration_domain_dimensions_number()-1);
@@ -1602,6 +1678,8 @@ void compute::check_loop_skewing(){
 }
 }
 
+
+//todo
 void compute::auto_loop_transofrmation(){
     // this->check_reduction();
    
@@ -1610,6 +1688,135 @@ void compute::auto_loop_transofrmation(){
 
 
 }
+
+
+void compute::apply_opt_strategy(std::vector<int> tile_size){
+    std::map<int,polyfp::var> iterator_map;
+    this->set_schedule(this->original_schedule);
+    this->set_loop_level_names(this->original_loop_level_name);
+    this->directive_map.clear();
+    this->is_unrolled = false;
+    this->unroll_factor.clear();
+    this->unroll_dimension.clear();
+    this->tile_map.clear();
+    this->tile_size_map.clear();
+    this->access_map.clear();
+    auto iterators = this->get_iteration_variables();
+    int size = iterators.size();
+    //TODO: SKEW MAP
+    for(auto &iter: iterators){
+        int loc = this->get_loop_level_number_from_dimension_name(iter.get_name());
+        // int loc = this->iterators_location_map(iter.get_name());
+        // std::cout<<iter.get_name()<<std::endl;
+        // std::cout<<loc<<std::endl;
+        iterator_map[loc] = iter;
+    }
+
+    if(size == 3){
+        // std::cout<<"start tile"<<std::endl;
+        // std::cout<<tile_size[0]<<std::endl;
+        var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+        if(tile_size[0]<64 && tile_size[1]<64 && tile_size[2]<64){
+            // std::cout<<"start tile1"<<std::endl;
+            this->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
+                // std::cout<<"start tile2"<<std::endl;
+                this->pipeline(k0,1);
+                this->unroll(k1,-1);
+                this->unroll(j1,-1);
+                this->unroll(i1,-1);
+            }
+            if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]==1){
+                this->pipeline(k0,1);
+                this->unroll(k1,-1);
+                this->unroll(j1,-1);
+            }
+            if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
+                this->pipeline(k0,1);
+                this->unroll(k1,-1);
+                this->unroll(i1,-1);
+            }
+            if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
+                this->pipeline(iterator_map[2],1);
+                this->unroll(i1,-1);
+                this->unroll(j1,-1);
+            }
+            for(auto &part:this->components){
+                // std::cout<<"start tile3"<<std::endl;
+                part.first->set_schedule(part.first->original_schedule);
+                part.first->set_loop_level_names(part.first->original_loop_level_name);
+                part.first->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+                if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
+                    part.first->after(this,j1);
+                }else{
+                    part.first->after(this,k1);
+                }
+            }
+        }
+        // std::cout<<"finish tile"<<std::endl;
+    }
+    else if(size == 2){
+        var i0("i0"), j0("j0"), i1("i1"), j1("j1");
+        if(tile_size[0]<64 && tile_size[1]<64){
+            this->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
+            if(tile_size[1]!=1&&tile_size[0]!=1){
+                this->pipeline(j0,1);
+                this->unroll(j1,-1);
+                this->unroll(i1,-1);
+            }else if(tile_size[1]==1&&tile_size[0]!=1){
+                this->pipeline(iterator_map[1],1);
+                this->unroll(i1,-1);
+            }else if(tile_size[0]==1&&tile_size[1]!=1){
+                this->pipeline(j0,1);
+                this->unroll(j1,-1);
+            }
+            for(auto &part:this->components){
+                part.first->set_schedule(part.first->original_schedule);
+                part.first->set_loop_level_names(part.first->original_loop_level_name);
+                part.first->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
+
+                if(tile_size[1]!=1&&tile_size[0]!=1){
+                    if(part.first->after_level == 1){
+                        part.first->after(this,j1);
+                    }else if(part.first->after_level == 0){
+                        part.first->after(this,i0);
+                        part.first->pipeline(j0,1);
+                    }
+                    
+                }else if(tile_size[1]==1&&tile_size[0]!=1){
+                    if(part.first->after_level == 1){
+                        part.first->after(this,i1);
+                    }else if(part.first->after_level == 0){
+                        part.first->pipeline(iterator_map[1],1);
+                        part.first->after(this,i0);
+                    }
+                    // part.first->after(this,i1);
+                }else if(tile_size[0]==1&&tile_size[1]!=1){
+                    if(part.first->after_level == 1){
+                        part.first->after(this,j1);
+                    }else if(part.first->after_level == 0){
+                        part.first->after(this,iterator_map[0]);
+                        // std::cout<<"unroll dimension 2"<<std::endl;
+                        part.first->pipeline(j0,1);
+                        part.first->unroll(j1,-1);
+                    }
+                }
+
+                // if(tile_size[1]!=1&&tile_size[0]!=1){
+                //     part.first->after(this,j1);
+                // }else if(tile_size[1]==1&&tile_size[0]!=1){
+                //     part.first->after(this,i1);
+                // }else if(tile_size[0]==1&&tile_size[1]!=1){
+                //     part.first->after(this,j1);
+                // }
+            
+            }
+        } 
+    }
+}
+
+
+
 void compute::compute_dependence_vectors(){
     // this->check_reduction();
 
@@ -1623,7 +1830,7 @@ void compute::compute_dependence_vectors(){
                 std::vector<int> vector_set;
                 for(int i = 0; i < dims; i++){
                     auto vector_element = store_index[i].get_dependence_vector()-load_index[i].get_dependence_vector();
-                    // std::cout<<"vector of dimension " + std::to_string(i)+"is: "+std::to_string(vector_element)<<std::endl;
+                    std::cout<<"vector of dimension " + std::to_string(i)+"is: "+std::to_string(vector_element)<<std::endl;
                     vector_set.push_back(vector_element);
 
                 }
@@ -1805,10 +2012,12 @@ void compute::interchange(int L0, int L1)
     }
 
     DEBUG(3, polyfp::str_dump("Final transformation map : ", isl_map_to_str(transformation_map)));
+    // polyfp::str_dump("Final transformation map : ", isl_map_to_str(transformation_map));
 
     schedule = isl_map_apply_range(isl_map_copy(schedule), isl_map_copy(transformation_map));
 
     DEBUG(3, polyfp::str_dump("Schedule after interchange: ", isl_map_to_str(schedule)));
+    // polyfp::str_dump("Schedule after interchange: ", isl_map_to_str(schedule));
 
     this->set_schedule(schedule);
 
@@ -2374,12 +2583,16 @@ void compute::skew(polyfp::var L0_var, polyfp::var L1_var,
         this->get_loop_level_numbers_from_dimension_names({L0_var.get_name(), L1_var.get_name()});
 
     this->check_dimensions_validity(dimensions);
+    this->is_skewed = true;
     int L0 = dimensions[0];
     int L1 = dimensions[1];
     this->skew(L0, L1, f_i,f_j );
     this->update_names(original_loop_level_names, {new_L0_var.get_name(), new_L1_var.get_name()}, dimensions[0], 2);
-    this->access_map.insert(std::pair(L0_var.get_name(),new_L0_var.get_name()));
-    this->access_map.insert(std::pair(L1_var.get_name(),new_L1_var.get_name()));
+    this->access_map.insert(std::pair(L0_var.get_name(),new_L1_var.get_name()));
+    this->access_map.insert(std::pair(L1_var.get_name(),new_L0_var.get_name()));
+    this->iterator_to_skew = new_L1_var.get_name();
+    this->iterator_to_modify = new_L0_var.get_name();
+    this->skew_factor = f_j;
 
 
 }
@@ -2618,8 +2831,8 @@ void polyfp::compute::after(compute &comp, polyfp::var level)
 
     auto leader_dim_map = comp.iterators_location_map;
     this->after_level = current_level;
-    std::cout<<"after_level";
-    std::cout<<current_level;
+    // std::cout<<"after_level";
+    // std::cout<<current_level;
     // for(int i=0; i<dim_list.size(); i++){
     //     if(counter <= current_level){
     //         this->iterators_location_map.insert(std::make_pair(dim_list[counter],leader_dim_map[dim_list[counter]]));
@@ -2678,8 +2891,8 @@ void polyfp::compute::after(compute *comp, polyfp::var level)
     int counter = 0;
     auto leader_dim_map = comp->iterators_location_map;
     this->after_level = current_level;
-    std::cout<<"current_level: ";
-    std::cout<<current_level;
+    // std::cout<<"current_level: ";
+    // std::cout<<current_level;
     this->after(comp, dimensions[0]);
     DEBUG_INDENT(-4);
 }

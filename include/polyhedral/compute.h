@@ -515,6 +515,7 @@ public:
     std::map<std::string, std::string > directive_tool_map;
     std::vector<std::string> original_loop_level_name;
     std::vector<std::string> final_loop_level_names;
+    std::vector<std::string> final_loop_level_names_reserved;
     std::vector<int> unroll_factor;
     std::vector<polyfp::expr> unroll_dimension;
 
@@ -560,6 +561,15 @@ public:
 
 
     bool is_tiled = false ;
+    bool is_skewed = false;
+    bool is_optimized = false;
+    bool is_pipelined = false;
+    // bool is_first_opt = false;
+    int current_factor = 1;
+    int largest_factor = 2;
+    std::string iterator_to_skew;
+    std::string iterator_to_modify;
+    int skew_factor;
 
         /**
       * Trim the union of schedules of the computation and
@@ -1003,7 +1013,12 @@ public:
 
     void check_loop_interchange();
     void check_loop_skewing();
+    void apply_opt_strategy(std::vector<int>);
 
+    bool opt_finished = false;
+    bool is_skewed_inDSE = false;
+    std::vector<int> final_strategy;
+    std::vector<int> current_strategy;
 
 
 

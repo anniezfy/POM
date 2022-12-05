@@ -76,7 +76,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
     isl_ast_node *node=isl_node;
     if (isl_ast_node_get_type(node) == isl_ast_node_for){
         isl_ast_expr *iter = isl_ast_node_for_get_iterator(node);
-        // std::cout<<isl_ast_expr_to_str(iter)<<std::endl;
+        // std::cout<<"enter a for node"<<std::endl;
         isl_id *identifier = isl_ast_expr_get_id(iter);
         std::string name_str(isl_id_get_name(identifier));
         name_map.insert(std::pair(level,name_str));
@@ -98,19 +98,25 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             lb_int = isl_val_get_num_si(isl_ast_expr_get_val(init));
         }
         else if (isl_ast_expr_get_type(init) == isl_ast_expr_op){
+            // std::cout<<"isl_ast_expr_op "<<std::endl;
             vbound_flag = true;
             int nb = isl_ast_expr_get_op_n_arg(init);
             for(int i=0;i<nb;i++)
-            {
+            {   
                 isl_ast_expr *expr_itr = isl_ast_expr_get_op_arg(init, i);
                 if (isl_ast_expr_get_type(expr_itr) == isl_ast_expr_int){
                     lb_args.push_back(getAffineConstantExpr(isl_val_get_num_si(isl_ast_expr_get_val(expr_itr)), builder.getContext()));
                 }
                 else if (isl_ast_expr_get_op_type(expr_itr) == isl_ast_op_sub){
-                    std::cout<<"isl_ast_op_sub "<<std::endl;
+                    // std::cout<<"isl_ast_op_sub "<<std::endl;
+                    int nb = isl_ast_expr_get_op_n_arg(init);
+                    
                     isl_ast_expr *expr0 = isl_ast_expr_get_op_arg(expr_itr, 0);
                     isl_ast_expr *expr1 = isl_ast_expr_get_op_arg(expr_itr, 1);
                     int sub1;
+                    int div1 =1;
+                    // isl_ast_expr_to_C_str(expr0);
+                    
                     if (isl_ast_expr_get_type(expr0) == isl_ast_expr_id){
                         isl_id *identifier = isl_ast_expr_get_id(expr0);
                         std::string name_str(isl_id_get_name(identifier));
@@ -134,16 +140,50 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                         mlir::Value value = ops[loc+index].getInductionVar();
                         lb_values.push_back(value);
                         isl_id_free(identifier);
-                    }else if(isl_ast_expr_get_type(expr0) == isl_ast_op_div){
+                    }else{
+                        int nb = isl_ast_expr_get_op_n_arg(expr0);
+                        
+                        isl_ast_expr *expr0_0 = isl_ast_expr_get_op_arg(expr0, 0);
+                        isl_ast_expr *expr1_0 = isl_ast_expr_get_op_arg(expr0, 1);
+                        if (isl_ast_expr_get_type(expr0_0) == isl_ast_expr_id){
+                            isl_id *identifier = isl_ast_expr_get_id(expr0_0);
+                            std::string name_str(isl_id_get_name(identifier));
+                            int loc;
+                            int index = 0;
+                            for(int i=0; i<start_loops_position.size(); i++){
+                                if(start_loops_position[i]>level){
+                                    index = start_loops_position[i-1];
+                                    break;
+                                }
+                                if(i == start_loops_position.size()-1 ){
+                                    index = start_loops_position[i];
+                                    break;
+                                }
+                            }
+                            for (auto &kv4: name_map){
+                                if(name_str==kv4.second){
+                                    loc = kv4.first;
+                                }
+                            }
+                            mlir::Value value = ops[loc+index].getInductionVar();
+                            lb_values.push_back(value);
+                            isl_id_free(identifier);
+                        }if (isl_ast_expr_get_type(expr1) == isl_ast_expr_int)
+                        {   
+                            div1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1_0));
+                        }
 
                     }
                     if (isl_ast_expr_get_type(expr1) == isl_ast_expr_int)
                     {   
-                        sub1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1))+1;
-                    }  
+                        sub1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1));
+                    }else{
+                    } 
                     //TODO: find right dimensions
-                    lb_args.push_back(builder.getAffineDimExpr(0) - sub1);
+                    lb_args.push_back(builder.getAffineDimExpr(0).floorDiv(div1) - sub1);
                     
+                }else if(isl_ast_expr_get_op_type(expr_itr) == isl_ast_expr_op){
+                    // std::cout<<"a division"<<std::endl;
                 }
                 // else if (isl_ast_expr_get_type(expr_itr) == isl_ast_expr_id){
                 //     isl_id *identifier = isl_ast_expr_get_id(expr_itr);
@@ -166,9 +206,11 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             ub_int = isl_val_get_num_si(isl_ast_expr_get_val(cond_upper))+1;
         }
         else if (isl_ast_expr_get_type(cond_upper) == isl_ast_expr_op){
+            // std::cout<<"upper bound"<<std::endl;
             vbound_flag = true;
             int nb = isl_ast_expr_get_op_n_arg(cond_upper);
             int sub1;
+            int div1=1;
             for(int i=0;i<nb;i++){   
                 isl_ast_expr *expr_itr = isl_ast_expr_get_op_arg(cond_upper, i);
                 if (isl_ast_expr_get_type(expr_itr) == isl_ast_expr_int){
@@ -233,11 +275,46 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                     ub_values.push_back(value);
                     isl_id_free(identifier);
                     ub_args.push_back(builder.getAffineDimExpr(0));
+                }else if(isl_ast_expr_get_type(expr_itr) == isl_ast_expr_op){
+                    // std::cout<<"div"<<std::endl;
+                    int nb = isl_ast_expr_get_op_n_arg(expr_itr);
+                    isl_ast_expr *expr0_0 = isl_ast_expr_get_op_arg(expr_itr, 0);
+                    isl_ast_expr *expr1_0 = isl_ast_expr_get_op_arg(expr_itr, 1);
+                    if (isl_ast_expr_get_type(expr0_0) == isl_ast_expr_id){
+                        isl_id *identifier = isl_ast_expr_get_id(expr0_0);
+                        std::string name_str(isl_id_get_name(identifier));
+                        int loc;
+                        int index = 0;
+                        for(int i=0; i<start_loops_position.size(); i++){
+                            if(start_loops_position[i]>level){
+                                index = start_loops_position[i-1];
+                                break;
+                            }
+                            if(i == start_loops_position.size()-1 ){
+                                index = start_loops_position[i];
+                                break;
+                            }
+                        }
+                        for (auto &kv4: name_map){
+                            if(name_str==kv4.second){
+                                loc = kv4.first;
+                            }
+                        }
+                        mlir::Value value = ops[loc+index].getInductionVar();
+                        ub_values.push_back(value);
+                        isl_id_free(identifier);
+                    }if (isl_ast_expr_get_type(expr1_0) == isl_ast_expr_int)
+                    {   
+                        div1 = isl_val_get_num_si(isl_ast_expr_get_val(expr1_0));
+                    }
+                    ub_args.push_back(builder.getAffineDimExpr(0).floorDiv(div1));
+
                 }else{
                     polyfp::str_dump("Transforming the following expression",
                            (const char *)isl_ast_expr_to_C_str(expr_itr));
-                }       
+                }     
                 isl_ast_expr_free(expr_itr);
+                
             }
         }
         auto ub_map = mlir::AffineMap::get(1, 0, ArrayRef<mlir::AffineExpr> (ub_args),builder.getContext());
@@ -364,12 +441,12 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
 
         }
     }else if (isl_ast_node_get_type(node) == isl_ast_node_block){
-        std::cout<<"enter a block node"<<std::endl;
+        // std::cout<<"enter a block node"<<std::endl;
         isl_ast_node_list *list = isl_ast_node_block_get_children(node);
         int current_level = level;
         int children_number = isl_ast_node_list_n_ast_node(list);
-        std::cout<<"number of children: ";
-        std::cout<<children_number<<std::endl;
+        // std::cout<<"number of children: ";
+        // std::cout<<children_number<<std::endl;
         //TODO: current start_loops_position maybe not safe enough, find another way to build it
 
         if(this->ops.size() == 0){
@@ -430,7 +507,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
     }else if (isl_ast_node_get_type(node) == isl_ast_node_user)
     {
         bool flag = true;
-        std::cout<<"enter a user node"<<std::endl;
+        // std::cout<<"enter a user node"<<std::endl;
         isl_ast_expr *expr = isl_ast_node_user_get_expr(node);
         isl_ast_expr *arg = isl_ast_expr_get_op_arg(expr, 0);
         isl_id *id = isl_ast_expr_get_id(arg);
@@ -462,11 +539,13 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
         for (auto &kv: comp->get_placeholder_dims()){
             int bias = 0;
             if(kv.get_expr_type() == polyfp::e_op){
+                //TODO, HANDLE loop skewing
                 // std::cout<<"here"<<std::endl;
                 auto expr0 = kv.get_operand(0);
                 auto expr1 = kv.get_operand(1);
                 auto left_index = a_print_index(expr0,comp,placeholder_index_values,level);
                 auto right_index = a_print_index(expr1,comp,placeholder_index_values,level);
+                // std::cout<<"finish store"<<std::endl;
                 if(kv.get_op_type() == polyfp::o_sub){
                     placeholder_index_args.push_back(left_index - right_index);
                     placeholder_index_flag = true;
@@ -489,27 +568,10 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 std::string tile_name1;
                 std::string tile_name2;
                 int tile_size;
-                auto name_set = comp->get_loop_level_names();
-                int index = 0;
-                for(int i=0; i<start_loops_position.size(); i++){
-                    
-                    if(start_loops_position.size()>1){
-                        if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
-                            index = start_loops_position[i-1];
-                            break;
-                        }
-                        if(i == start_loops_position.size()-1 ){
-                            index = start_loops_position[i];
-                            break;
-                        }
-                    }else{
-                        
-                        index = start_loops_position[0];
-                        break;
-                    }   
-                }
-                
+                auto name_set = comp->get_loop_level_names(); 
+                // std::cout<<kv.get_name()<<std::endl;      
                 if(std::find(name_set.begin(), name_set.end(), kv.get_name()) == name_set.end()){
+                    // std::cout<<"not in the loop level names"<<std::endl;                 
                     for (auto &kv2: comp->get_access_map()){
                         if(kv.get_name()==kv2.first){
                             tile_name1 = kv2.second;
@@ -517,14 +579,13 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                             // loc = comp->get_loop_level_number_from_dimension_name(kv2.second);
                         }
                     }
+                    // std::cout<<loc<<std::endl; 
                     mlir::Value value = ops[loc].getInductionVar();
                     if ( std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value)== placeholder_index_values.end() ){    
                         placeholder_index_values.push_back(value);
                     }
                     
                     if(comp->is_tiled == true){
-                        std::cout<<"here!!!"<<std::endl;
-                        //MOD2
                         for (auto &kv3: comp->get_tile_map()){
                             if(tile_name1==kv3.first){
                                 // loc_2 = comp->get_loop_level_number_from_dimension_name(kv3.second);
@@ -544,28 +605,29 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                         //TODO: find the right dim
                         int index_2 = std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value2) - placeholder_index_values.begin();
                         int index_3 = std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value) - placeholder_index_values.begin();
-
-                        // std::cout<<"here3"<<std::endl;
-                        // std::cout<<index_3<<std::endl;
                         placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)+builder.getAffineDimExpr(index_2)*tile_size);
-
-                        // else{
-                        //     std::cout<<"here4"<<std::endl;
-                        //     std::cout<<index_3<<std::endl;
-                        //     placeholder_index_args.push_back(builder.getAffineDimExpr(index_2)*tile_size);
-                        // }
+                        placeholder_index_flag = true;
+                    }else if(comp->is_skewed == true){
+                        loc = comp->iterators_location_map[comp->iterator_to_skew];
+                        mlir::Value value2 = ops[loc].getInductionVar();
+                        if ( std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value2)== placeholder_index_values.end() ){
+                            placeholder_index_values.push_back(value2);
+                        }
+                        //TODO: find the right dim
+                        int index_2 = std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value2) - placeholder_index_values.begin();
+                        int index_3 = std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value) - placeholder_index_values.begin();
+                        // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*2);
+                        // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                        if(tile_name1 == comp->iterator_to_modify){
+                            placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor);
+                        }else{
+                            placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                        }
+                        
                         placeholder_index_flag = true;
                     }
                 }else{
-                    // std::cout<<kv.get_name()<<std::endl;
                     loc = comp->iterators_location_map[kv.get_name()];
-                    // loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
-                    // std::cout<<"loc"<<std::endl;
-                    // std::cout<<start_loops_position.size()<<std::endl;
-                    // std::cout<<start_loops_position[0]<<std::endl;
-                    // std::cout<<loc<<std::endl;
-                    // std::cout<<index<<std::endl;
-                    // std::cout<<level<<std::endl;
                     mlir::Value value = ops[loc].getInductionVar();
                     // std::cout<<loc+index<<std::endl;
                     if (std::find(placeholder_index_values.begin(), placeholder_index_values.end(), value) == placeholder_index_values.end()){
@@ -580,8 +642,10 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 }
             }
         }
-        // std::cout<<"here3"<<std::endl;
+        
+        // std::cout<<"111"<<std::endl;
         auto placeholder_map = mlir::AffineMap::get(placeholder_index_values.size(), 0, ArrayRef<mlir::AffineExpr> (placeholder_index_args),builder.getContext());
+        // std::cout<<"222"<<std::endl;
         mlir::ValueRange placeholder_vr=llvm::makeArrayRef(placeholder_index_values);
         auto mem = funcs[0].getArgument(index_placeholder);
         argument_map.insert(std::pair(p_name,mem));
@@ -621,7 +685,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             }
         }
         else if (polyfp_expr.get_expr_type() == polyfp::e_op && polyfp_expr.get_op_type() != polyfp::o_access ){            
-            std::cout<<"We get a e_op here"<<std::endl;
+            // std::cout<<"We get a e_op here"<<std::endl;
             mlir::ValueRange indices = {};
             auto a = polyfp_expr.get_operand(0);
             auto b = polyfp_expr.get_operand(1);
@@ -629,10 +693,10 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
             mlir::BlockArgument right;
             mlir::arith::MulFOp allocSize_m;
             mlir::arith::AddFOp allocSize_a;
-            theModule.dump();
+            // theModule.dump();
             a_print_expr(polyfp_expr, comp, level);
-            std::cout<<"We get a e_op1 here"<<std::endl;
-            theModule.dump();
+            // std::cout<<"We get a e_op1 here"<<std::endl;
+            // theModule.dump();
 
             if(if_flag == true){
                 mlir::Value value = ops[2].getInductionVar();
@@ -647,10 +711,9 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 builder.setInsertionPointToStart(ifOp.getBody());
                 //TODO: other arithmetic? sub, o_div
                 auto the_op = all_current_op.back();
-                std::cout<<"all_current_op here"<<std::endl;
-                std::cout<<all_current_op.size()<<std::endl;
+                
                 auto index = the_op.index();
-                std::cout<<index<<std::endl;
+                // std::cout<<index<<std::endl;
                 if(index==0){
                     auto op_to_process = std::get<0>(the_op);
                     auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), op_to_process, mem, placeholder_vr);
@@ -730,6 +793,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                         index_args.push_back(left_index - right_index);
                         index_flag = true;
                     }else if(kv.get_op_type() == polyfp::o_add){
+                        
                         index_args.push_back(left_index + right_index);
                         index_flag = true;  
                     }else if(kv.get_op_type() == polyfp::o_mul){
@@ -747,17 +811,6 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                     std::string tile_name2;
                     int tile_size;
                     auto name_set = comp->get_loop_level_names();
-                    int index = 0;
-                    for(int i=0; i<start_loops_position.size(); i++){
-                        if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
-                            index = start_loops_position[i-1];
-                            break;
-                        }
-                        if(i == start_loops_position.size()-1 ){
-                            index = start_loops_position[i];
-                            break;
-                        }
-                    }
                     //MOD3
                     if ( std::find(name_set.begin(), name_set.end(), kv.get_name()) == name_set.end() ){
                         for (auto &kv2: comp->get_access_map()){
@@ -793,10 +846,32 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                             int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
                             int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
                             index_args.push_back(builder.getAffineDimExpr(index_3)+builder.getAffineDimExpr(index_2)*tile_size);
-                        }else{
-                            index_args.push_back(builder.getAffineDimExpr(loc+index));
-                        }
-                        index_flag = true;                                 
+                        }else if(comp->is_skewed == true){
+                            
+                            loc = comp->iterators_location_map[comp->iterator_to_skew];
+                            
+                            mlir::Value value2 = ops[loc].getInductionVar();
+                            if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                                
+                                index_values.push_back(value2);
+                            }
+                            //TODO: find the right dim
+                            int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+                            int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*2);
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                            if(tile_name1 == comp->iterator_to_modify){
+                                
+                                index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor);
+                            }else{
+                                index_args.push_back(builder.getAffineDimExpr(index_3));
+                            }
+                        
+                            index_flag = true;
+                    }else{
+                        index_args.push_back(builder.getAffineDimExpr(loc));
+                    }
+                    index_flag = true;                                 
                     }else{
                         loc = comp->iterators_location_map[kv.get_name()];
                         // loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
@@ -865,6 +940,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
 mlir::AffineExpr polyfp::MLIRGenImpl::a_print_index(polyfp::expr polyfp_expr, polyfp::compute *comp, std::vector<mlir::Value> &index_values, int level){
     mlir::AffineExpr index_value;
     int loc =  0;
+    int loc2=0;
     if (polyfp_expr.get_expr_type() == polyfp::e_op){ 
         auto expr0 = polyfp_expr.get_operand(0);
         auto expr1 = polyfp_expr.get_operand(1);
@@ -884,6 +960,7 @@ mlir::AffineExpr polyfp::MLIRGenImpl::a_print_index(polyfp::expr polyfp_expr, po
         loc = get_iterator_location_from_name(comp,polyfp_expr,index_values);
         auto name_set = comp->get_loop_level_names();
         if(comp->is_tiled == true&&std::find(name_set.begin(), name_set.end(), polyfp_expr.get_name()) == name_set.end()){
+            // std::cout<<"var index"<<std::endl;
             int loc_2 =0;
             std::string tile_name1;
             std::string tile_name2;
@@ -892,6 +969,9 @@ mlir::AffineExpr polyfp::MLIRGenImpl::a_print_index(polyfp::expr polyfp_expr, po
                 for (auto &kv2: comp->get_access_map()){
                     if(polyfp_expr.get_name()==kv2.first){
                         tile_name1 = kv2.second;
+                        loc2 = comp->iterators_location_map[kv2.second];
+                        // std::cout<<"tile_name1"+tile_name1<<std::endl;
+                        // std::cout<<"tile_name1"+polyfp_expr.get_name()<<std::endl;
                     }
                 }
                 for (auto &kv3: comp->get_tile_map()){
@@ -899,30 +979,75 @@ mlir::AffineExpr polyfp::MLIRGenImpl::a_print_index(polyfp::expr polyfp_expr, po
                         loc = comp->iterators_location_map[kv3.second];
                         // loc_2 = comp->get_loop_level_number_from_dimension_name(kv3.second);
                         tile_name2 = kv3.second;
+                        
+                        // std::cout<<"tile_name2"+tile_name2<<std::endl;
+                        // std::cout<<loc<<std::endl;
                     }
                 }
                 for (auto &kv4: comp->get_tile_size_map()){
                     if(tile_name1==kv4.first){
                         tile_size = kv4.second;
+                        // std::cout<<"tile_size"+std::to_string(tile_size)<<std::endl;
                     }
                 }
                 
                 mlir::Value value2 = ops[loc].getInductionVar();
+                mlir::Value value3 = ops[loc2].getInductionVar();
                 if ( std::find(index_values.begin(), index_values.end(), value2) == index_values.end()){
                     index_values.push_back(value2);
                 }
                 // int index = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
                 int index2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
-                index_value = builder.getAffineDimExpr(loc)+builder.getAffineDimExpr(index2)*tile_size;
+                //TODO, 这里index3支持了，其他地方可能还有问题
+                int index3 = std::find(index_values.begin(), index_values.end(), value3) - index_values.begin();
+                // std::cout<<"index2"+std::to_string(index2)<<std::endl;
+                // std::cout<<"loc"+std::to_string(loc)<<std::endl;
+                index_value = builder.getAffineDimExpr(index3)+builder.getAffineDimExpr(index2)*tile_size;
             }
   
-        }else{
+        }else if(comp->is_skewed == true){
+            
+            int loc_2 =0;
+            std::string tile_name1;
+            std::string tile_name2;
+            int tile_size;
+            for (auto &kv2: comp->get_access_map()){
+                if(polyfp_expr.get_name()==kv2.first){
+                    tile_name1 = kv2.second;
+                    loc = comp->iterators_location_map[tile_name1];
+                    // loc = comp->get_loop_level_number_from_dimension_name(kv2.second);
+                }
+            }
+            // std::cout<<loc<<std::endl; 
+            mlir::Value value = ops[loc].getInductionVar();
+            if ( std::find(index_values.begin(), index_values.end(), value)== index_values.end() ){
+                
+                index_values.push_back(value);
+            }
+           
+            loc = comp->iterators_location_map[comp->iterator_to_skew];
+            mlir::Value value2 = ops[loc].getInductionVar();
+            if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                index_values.push_back(value2);
+            }
+            //TODO:
+            int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+            int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+            if(tile_name1 == comp->iterator_to_modify){
+                index_value=builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor;
+            }else{
+                index_value =builder.getAffineDimExpr(index_3);
+            }
+            // index_value = builder.getAffineDimExpr(index_3)+builder.getAffineDimExpr(index_2)*tile_size;
+        }
+        else{
             // std::cout<<loc<<std::endl;
             index_value = builder.getAffineDimExpr(loc);
         }
     }  
     if (polyfp_expr.get_expr_type() == polyfp::e_val)
-    {   std::cout<<"const value"<<std::endl;
+    {   
+        // std::cout<<"e_val"<<std::endl;
         index_value = getAffineConstantExpr(polyfp_expr.get_int_val(),builder.getContext());
     }  
     // index_value = builder.getAffineDimExpr(loc%2);
@@ -982,6 +1107,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                     int tile_size;
                     auto name_set = comp->get_loop_level_names();
                     if ( std::find(name_set.begin(), name_set.end(), kv.get_name()) == name_set.end() ){
+                        
                         for (auto &kv2: comp->get_access_map()){
                             if(kv.get_name()==kv2.first){
                                 tile_name1 = kv2.second;
@@ -990,23 +1116,25 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                                 
                             }
                         }
-                        int index = 0;
-                        for(int i=0; i<start_loops_position.size(); i++){
-                            if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
-                                index = start_loops_position[i-1];
-                                break;
-                            }
-                            if(i == start_loops_position.size()-1 ){
-                                index = start_loops_position[i];
-                                break;
-                            }
-                        }
+                        // int index = 0;
+                        // for(int i=0; i<start_loops_position.size(); i++){
+                        //     if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
+                        //         index = start_loops_position[i-1];
+                        //         break;
+                        //     }
+                        //     if(i == start_loops_position.size()-1 ){
+                        //         index = start_loops_position[i];
+                        //         break;
+                        //     }
+                        // }
                         mlir::Value value = ops[loc].getInductionVar();
                         if ( std::find(index_values.begin(), index_values.end(), value) == index_values.end() ){
+                            
                             index_values.push_back(value);
                         }
                         if(comp->is_tiled ==true){
                             for (auto &kv3: comp->get_tile_map()){
+                                
                                 if(tile_name1==kv3.first){
                                     loc = comp->iterators_location_map[kv3.second];
                                     // loc_2 = comp->get_loop_level_number_from_dimension_name(kv3.second);
@@ -1014,36 +1142,65 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                                 }
                             }
                             for (auto &kv4: comp->get_tile_size_map()){
+                                
                                 if(tile_name1==kv4.first){
                                     tile_size = kv4.second;
                                 }
                             }
                             mlir::Value value2 = ops[loc].getInductionVar();
                             if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                                
                                 index_values.push_back(value2);
                             }
                             //TODO:
                             int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+                            
                             int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+
                             index_args.push_back(builder.getAffineDimExpr(index_3)+builder.getAffineDimExpr(index_2)*tile_size);
-                        }else{
-                            index_args.push_back(builder.getAffineDimExpr(loc+index));
+                        }else if(comp->is_skewed == true){
+                            
+                            loc = comp->iterators_location_map[comp->iterator_to_skew];
+                            
+                            mlir::Value value2 = ops[loc].getInductionVar();
+                            if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                                
+                                index_values.push_back(value2);
+                            }
+                            //TODO: find the right dim
+                            int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+                            int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*2);
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                            if(tile_name1 == comp->iterator_to_modify){
+                                index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor);
+                            }else{
+                                index_args.push_back(builder.getAffineDimExpr(index_3));
+                            }
+                        
+                            index_flag = true;
+                    }
+                        
+                        
+                        else{
+                            std::cout<<"something went wrong"<<std::endl;
                         }
                         index_flag = true;              
                     }else{
+                        
                         loc = comp->iterators_location_map[kv.get_name()];
                         // loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
-                        int index = 0;
-                        for(int i=0; i<start_loops_position.size(); i++){
-                            if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
-                                index = start_loops_position[i-1];
-                                break;
-                            }
-                            if(i == start_loops_position.size()-1 ){
-                                index = start_loops_position[i];
-                                break;
-                            }
-                        }
+                        // int index = 0;
+                        // for(int i=0; i<start_loops_position.size(); i++){
+                        //     if(start_loops_position[i]>level&&start_loops_position[i-1]<=level){
+                        //         index = start_loops_position[i-1];
+                        //         break;
+                        //     }
+                        //     if(i == start_loops_position.size()-1 ){
+                        //         index = start_loops_position[i];
+                        //         break;
+                        //     }
+                        // }
                         mlir::Value value = ops[loc].getInductionVar();
                         if ( std::find(index_values.begin(), index_values.end(), value) == index_values.end()){
                             index_values.push_back(value);
@@ -1054,6 +1211,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                     }
                 } 
             }
+            
             auto map = mlir::AffineMap::get(index_values.size(), 0, ArrayRef<mlir::AffineExpr> (index_args),builder.getContext());
             mlir::ValueRange vr=llvm::makeArrayRef(index_values);
             //TODO.number of variables
@@ -1061,7 +1219,9 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             if(index_flag == true){
                 loadedLhs = builder.create<mlir::AffineLoadOp>(builder.getUnknownLoc(), arg_a,map,vr);
             }else{
+                
                 loadedLhs = builder.create<mlir::AffineLoadOp>(builder.getUnknownLoc(), arg_a ,vr);
+                
             }
         }else if(left.get_expr_type() == polyfp::e_var){
             int index_argument;
@@ -1155,12 +1315,38 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                             int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
                             int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
                             index_args.push_back(builder.getAffineDimExpr(index_3)+builder.getAffineDimExpr(index_2)*tile_size);
-                        }else{
-                            //TODO
-                            int index_1 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
-                            index_args.push_back(builder.getAffineDimExpr(index_1));
+                        }else if(comp->is_skewed == true){
+                            
+                            loc = comp->iterators_location_map[comp->iterator_to_skew];
+                            
+                            mlir::Value value2 = ops[loc].getInductionVar();
+                            if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                                
+                                index_values.push_back(value2);
+                            }
+                            //TODO: find the right dim
+                            int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+                            int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*2);
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                            if(tile_name1 == comp->iterator_to_modify){
+                                index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor);
+                            }else{
+                                index_args.push_back(builder.getAffineDimExpr(index_3));
+                            }
+                        
+                            index_flag = true;
+                    }else{
+                            std::cout<<"something went wrong"<<std::endl;
                         }
-                        index_flag = true;
+                        index_flag = true; 
+                        
+                        // else{
+                        //     //TODO
+                        //     int index_1 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                        //     index_args.push_back(builder.getAffineDimExpr(index_1));
+                        // }
+                        // index_flag = true;
                     }else{
                         loc = comp->iterators_location_map[kv.get_name()];
                         // loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
@@ -1261,7 +1447,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
             }
         }
         if (left.get_expr_type() == polyfp::e_var  && right.get_expr_type() == polyfp::e_var){
-            std::cout<<"both are var"<<std::endl;
+            // std::cout<<"both are var"<<std::endl;
             if(polyfp_expr.get_op_type() == polyfp::o_add){
                 auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), arg_left, arg_right);
                 current_op.push_back(add_1);
@@ -1305,7 +1491,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                 // std::cout<<"issue in index3"<<std::endl;
                 int bias = 0;
                 if(kv.get_expr_type() == polyfp::e_op){
-                    std::cout<<"issue in index4"<<std::endl;
+                    
                     auto expr0 = kv.get_operand(0);
                     auto expr1 = kv.get_operand(1);
                     // std::cout<<"issue in index"<<std::endl;
@@ -1377,12 +1563,39 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                             int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
                             int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
                             index_args.push_back(builder.getAffineDimExpr(index_3)+builder.getAffineDimExpr(index_2)*tile_size);
-                        }else{
-                             //TODO
-                            int index_1 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
-                            index_args.push_back(builder.getAffineDimExpr(index_1));
+                        }else if(comp->is_skewed == true){
+                            
+                            loc = comp->iterators_location_map[comp->iterator_to_skew];
+                            
+                            mlir::Value value2 = ops[loc].getInductionVar();
+                            if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                                
+                                index_values.push_back(value2);
+                            }
+                            //TODO: find the right dim
+                            int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+                            int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*2);
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                            if(tile_name1 == comp->iterator_to_modify){
+                                index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor);
+                            }else{
+                                index_args.push_back(builder.getAffineDimExpr(index_3));
+                            }
+                        
+                            index_flag = true;
+                    }else{
+                            
                         }
-                        index_flag = true;    
+                        index_flag = true; 
+                        
+                        
+                        // else{
+                        //      //TODO
+                        //     int index_1 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                        //     index_args.push_back(builder.getAffineDimExpr(index_1));
+                        // }
+                        // index_flag = true;    
 
                     }else{
                         loc = comp->iterators_location_map[kv.get_name()];
@@ -1425,7 +1638,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                     auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
                     all_current_op.push_back(add_1);
                     // std::cout<<"get the first add"<<std::endl;
-                    add_1.dump();
+                    // add_1.dump();
                 }else if(index==1){
                     auto op_to_process = std::get<1>(the_op);
                     auto add_1 = builder.create<mlir::arith::AddFOp>(builder.getUnknownLoc(), loadedRhs, op_to_process);
@@ -1677,11 +1890,38 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                             int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
                             int index = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
                             index_args.push_back(builder.getAffineDimExpr(index)+builder.getAffineDimExpr(index_2)*tile_size);
-                        }else{
-                            //TODO
-                            index_args.push_back(builder.getAffineDimExpr(loc));
+                        }else if(comp->is_skewed == true){
+                            
+                            loc = comp->iterators_location_map[comp->iterator_to_skew];
+                            
+                            mlir::Value value2 = ops[loc].getInductionVar();
+                            if ( std::find(index_values.begin(), index_values.end(), value2)== index_values.end() ){
+                                
+                                index_values.push_back(value2);
+                            }
+                            //TODO: find the right dim
+                            int index_2 = std::find(index_values.begin(), index_values.end(), value2) - index_values.begin();
+                            int index_3 = std::find(index_values.begin(), index_values.end(), value) - index_values.begin();
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*2);
+                            // placeholder_index_args.push_back(builder.getAffineDimExpr(index_3));
+                            if(tile_name1 == comp->iterator_to_modify){
+                                index_args.push_back(builder.getAffineDimExpr(index_3)-builder.getAffineDimExpr(index_2)*comp->skew_factor);
+                            }else{
+                                index_args.push_back(builder.getAffineDimExpr(index_3));
+                            }
+                        
+                            index_flag = true;
+                    }else{
+                            // std::cout<<"something went wrong"<<std::endl;
                         }
-                        index_flag = true;  
+                        index_flag = true; 
+                        
+                        
+                        // else{
+                        //     //TODO
+                        //     index_args.push_back(builder.getAffineDimExpr(loc));
+                        // }
+                        // index_flag = true;  
                     }else{
                         //TODO
                         // loc = comp->get_loop_level_number_from_dimension_name(kv.get_name());
@@ -1993,6 +2233,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
 mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::function &fct, isl_ast_node *node, int &level) {
     auto manager = MLIRGenImpl(context); 
     manager.mlirGen1(fct,node,level,true, false, false);
+    // manager.getModule().dump();
     // std::cout<<fct.leader_computations.size()<<std::endl;
     for(auto &comp : fct.leader_computations){
         // int index = fct.leader_computation_index[comp];
@@ -2032,7 +2273,7 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     // manager.getModule().dump();
     // mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);         
     mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
-
+    // mlir::scalehls::setFuncDirective(manager.get_funcs()[0], false, 1, true);
     for(auto &comp: fct.leader_computations){
         if(comp->is_unrolled == true){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
@@ -2044,6 +2285,8 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
                 // std::cout<<loc<<std::endl;
                 // loc = loc + bias;
                 if(comp->unroll_factor[i] != -1){
+                    // std::cout<<"loc"<<std::endl;
+                    // std::cout<<comp->unroll_factor[i]<<std::endl;
                     mlir::loopUnrollUpToFactor(manager.ops[loc],comp->unroll_factor[i]);
                 }else{
                     mlir::loopUnrollFull(manager.ops[loc]);
@@ -2055,7 +2298,7 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
 
  
-
+manager.getModule().dump();
 
     // Read target specification JSON file.
     std::string errorMessage;
@@ -2087,7 +2330,21 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGen2(mlir::MLIRContext &context, polyfp::f
     //                        << ", DSP usage is " << llvm::Twine(dspNum) << ".\n\n";
     //dataflow
     // mlir::scalehls::setFuncDirective(manager.get_funcs()[0],false,1,true);
+   
+    int dspNum;
     // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[0],manager.funcs[0]);
+    // dspNum = mlir::scalehls::getResource(manager.ops[0]).getDsp();
+    // std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
+    // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[2],manager.funcs[0]);
+    // dspNum = mlir::scalehls::getResource(manager.ops[2]).getDsp();
+    // std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
+    // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[18],manager.funcs[0]);
+    // dspNum = mlir::scalehls::getResource(manager.ops[18]).getDsp();
+    // std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
+    // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[24],manager.funcs[0]);
+    // dspNum = mlir::scalehls::getResource(manager.ops[24]).getDsp();
+    // std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
+
     // mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
     return manager.getModule();
 }
@@ -2107,7 +2364,7 @@ void gen_mlir(polyfp::function &fct, isl_ast_node *node, int &level){
     if (failed(mlir::verify(*module, false))) {
         module->emitError("module verification error");
     }
-    module->dump();
+    // module->dump();
     std::error_code error;
     std::string s = fct.get_name();
     std::string path = "/home/POM/samples/"+s+"/"+s+".mlir";

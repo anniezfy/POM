@@ -2062,7 +2062,7 @@ public:
     //     this->dtype = t;
     //     this->func = func;
     // };
-    constant(float value, polyfp::primitive_t t = p_float32, polyfp::function *fct = global::get_implicit_function());
+    constant(float value = 0, polyfp::primitive_t t = p_float32, polyfp::function *fct = global::get_implicit_function());
         // this->value = expr((float) value);
         // this->name = std::to_string(value);
         // this->etype = polyfp::e_var;

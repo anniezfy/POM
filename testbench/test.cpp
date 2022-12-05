@@ -16,8 +16,7 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-#include <variant>
-#include <vector>
+
 #include "expr.h"
 #include "compute.h"
 #include "function.h"
@@ -26,45 +25,89 @@
 using namespace std;
 using namespace polyfp;
 int main(){
-    init("test");
+    init("3mm");
     auto *fct = global::get_implicit_function();
-    var i("i", 1 ,4096);
-    var j("j", 1 ,4096);
-    var k("k", 0 ,4096);
+    var i("i", 0 ,32);
+    var j("j", 0 ,32);
+    placeholder y("y",{32},p_float32);
+    placeholder x("x",{32},p_float32);
+    constant scalar(0);
+    compute s_1("s_1",{i,j},x(i)+y(j),x(i));
+    // compute s_2("s_2",{k,i,j},C(i,j)+A(i,k)*B(k,j),C(i,j));
+    // compute s_3("s_3",{i,j},scalar,F(i,j));
+    // compute s_4("s_4",{k,j,i},F(i,j)+C(i,k)*D(k,j)+scalar+scalar,F(i,j));
+    // compute s_5("s_5",{i,j},scalar,G(i,j));
+    // compute s_6("s_6",{k,j,i},G(i,j)+E(i,k)*H(k,j),G(i,j));
+    // compute s_7("s_7",{k,j,i},I(i,j)+G(i,k)*F(k,j),I(i,j));
+    s_1.interchange(i,j);
 
-    placeholder A("A",{4096,4096},p_float32);
-    placeholder B("B",{4096},p_float32);
-    constant factor(9);
-    constant alpha(1.6);
-    constant beta(3.7);
-
-    // compute s_1("s_1",{k,i,j},(A(i-1,j-1)+A(i-1,j))*(A(i-1,j+1)+A(i,j-1)), A(i,j));
-    compute s_1("s_1",{i,j},factor, A(i,j));
-    compute s_2("s_2",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,k));
-    compute s_3("s_3",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,j));
-    compute s_4("s_4",{i},factor, B(i));
-    compute s_5("s_5",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,k));
-    compute s_6("s_6",{i,j,k},(A(i-1,j)+alpha)+(beta+A(i-1,j)), A(i,j));
-    s_2.after(s_1,i);
-    s_3.after(s_2,j);
-    s_4.after(s_3,i);
-    s_5.after(s_1,-1);
-    s_6.after(s_5,i);
-    // for(auto &kv: s_1.iterators_location_map){
-    //     std::cout<<kv.first+" ";
-    //     std::cout<<kv.second<<std::endl;
-    // }
-    // for(auto &kv: s_2.iterators_location_map){
-    //     std::cout<<kv.first+" ";
-    //     std::cout<<kv.second<<std::endl;
-    // }
-    // for(auto &kv: s_3.iterators_location_map){
-    //     std::cout<<kv.first+" ";
-    //     std::cout<<kv.second<<std::endl;
-    // }
+    var i0("i0"), j0("j0"),i1("i1"), j1("j1"),k1("k1");
+    // s_3.after(s_2,-1);
+    // s_4.after(s_3,-1);
+    // s_5.after(s_4,-1);
+    // s_6.after(s_5,-1);
+    // s_7.after(s_6,-1);
+    // s_3.after(s_1,j);
+    // s_2.after(s_1,-1);
+    // s_4.after(s_2,k);
+    // s.unroll(i1,-1);
+    // s.unroll(j1,-1);
+    // s.pipeline(j0,1);
+    // A.partition({4,4},"cyclic");
     
+    s_1.tile(j,i,1,8,i0,j0,i1,j1);
+    // s_4.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);
+    // s_6.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);
+    // s_7.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);
+    s_1.unroll(j1,-1);
+    s_1.pipeline(i1,1);
+    // s_2.unroll(j1,-1);
+    // s_2.unroll(i1,-1);
+    // s_4.unroll(k1,-1);
+    // s_4.unroll(j1,-1);
+    // s_6.unroll(k1,-1);
+    // s_6.unroll(j1,-1);
+    // s_7.unroll(k1,-1);
+    // s_7.unroll(j1,-1);
+    // s_4.unroll(i1,-1);
+    // s_2.pipeline(k0,1);
+    // s_4.pipeline(k0,1);
+    // s_6.pipeline(k0,1);
+    // s_7.pipeline(k0,1);
+    // A.partition({16,2},"cyclic");
+    // B.partition({2,2},"cyclic");
+    // C.partition({16,1},"cyclic");
+    // D.partition({2,2},"cyclic");
+    // E.partition({16,2},"cyclic");
+    // F.partition({16,2},"cyclic");
+    // G.partition({16,2},"cyclic");
+    // H.partition({2,2},"cyclic");
+    // I.partition({16,2},"cyclic");
+    // fct->auto_DSE("/home/POM/samples/3mm/");
     codegen();
-    
-
-    // fct->gen_c_code();
 }
+// C code:
+  /* E := A*B */
+//   for (i = 0; i < _PB_NI; i++)
+//     for (j = 0; j < _PB_NJ; j++)
+//       {
+// 	E[i][j] = SCALAR_VAL(0.0);
+// 	for (k = 0; k < _PB_NK; ++k)
+// 	  E[i][j] += A[i][k] * B[k][j];
+//       }
+//   /* F := C*D */
+//   for (i = 0; i < _PB_NJ; i++)
+//     for (j = 0; j < _PB_NL; j++)
+//       {
+// 	F[i][j] = SCALAR_VAL(0.0);
+// 	for (k = 0; k < _PB_NM; ++k)
+// 	  F[i][j] += C[i][k] * D[k][j];
+//       }
+//   /* G := E*F */
+//   for (i = 0; i < _PB_NI; i++)
+//     for (j = 0; j < _PB_NL; j++)
+//       {
+// 	G[i][j] = SCALAR_VAL(0.0);
+// 	for (k = 0; k < _PB_NJ; ++k)
+// 	  G[i][j] += E[i][k] * F[k][j];
+//       }

@@ -285,7 +285,7 @@ protected:
     void dfs(int pos, int top, int end, int map[100][100], int n, int v[100],int stack[120]);
     polyfp::compute * update_latency();
     int get_longest_path();
-    int get_longest_node(std::vector<int> path);
+    int get_longest_node(std::vector<long> path);
     void add_computation(compute *cpt);
     // polyfp::compute * evaluate_func();
 
@@ -473,7 +473,7 @@ protected:
 public:
 
 
-    polyfp::compute * evaluate_func();
+    void evaluate_func();
     std::unordered_set<polyfp::compute *> starting_computations;
     std::vector<polyfp::compute *> leader_computations;
     std::vector<polyfp::compute *> leaf_computations;
@@ -481,7 +481,9 @@ public:
     std::map<int,long> latency_map;
     std::map<int,long> all_latency_map;
     std::map<int,int> resource_map;
-    std::vector<std::vector<int>> paths;
+    std::map<int,std::vector<int>> path_map;
+    std::vector<std::vector<long>> paths;
+    std::vector<std::string> finish_list;
 
     int get_global_location(){
         return global_location;
@@ -497,9 +499,10 @@ public:
     long longest_node;
     int dsp_max;
     int dsp_usage;
-    int best_dsp_usage;
+    int best_dsp_usage = 99999;
     long best_latency;
     long current_latency;
+    polyfp::compute * current_opt_comp;
 
 
     int global_location;

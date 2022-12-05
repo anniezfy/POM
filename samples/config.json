@@ -16,7 +16,7 @@
     "__resource_constr": "Enable resource constraints",
     "resource_constr": true,
     "frequency": "100MHz",
-    "dsp": 220,
+    "dsp": 110,
     "bram": 280,
     "dsp_usage": {
         "fadd": 2,
