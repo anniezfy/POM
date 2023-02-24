@@ -38,7 +38,8 @@ int main(){
     constant alpha;
     constant beta;
     compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
-    compute s_2("s_2",{k,i,j},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
+    // compute s_2("s_2",{k,i,j},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
+    compute s_2("s_2",{i,j,k},C(i,j)+alpha*A(i,k)*B(k,j),C(i,j));
     var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
     s_2.after(s_1,-1);
     // s_2.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);

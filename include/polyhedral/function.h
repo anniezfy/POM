@@ -472,7 +472,7 @@ protected:
     compute* get_last_cpt();
 public:
 
-
+    bool is_dataflowed = false;
     void evaluate_func();
     std::unordered_set<polyfp::compute *> starting_computations;
     std::vector<polyfp::compute *> leader_computations;

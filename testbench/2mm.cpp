@@ -26,6 +26,7 @@ using namespace std;
 using namespace polyfp;
 int main(){
     init("2mm");
+
     auto *fct = global::get_implicit_function();
     var i("i", 0 ,4096);
     var j("j", 0 ,4096);

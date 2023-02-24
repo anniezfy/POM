@@ -154,12 +154,7 @@ private:
     std::vector<polyfp::expr> placeholder_dims;
     std::vector<polyfp::expr > placeholder_accessmap;
 
-    /**
-     * 
-      * Returns the iteration_variables vector containing each of the
-      * computation's iteration variables
-      */
-    std::vector<polyfp::var> get_iteration_variables();
+
 
      /**
       * Take a list of iterators and a name as input and construct the iteration
@@ -507,6 +502,12 @@ public:
     long latency;
     int dsp;
     int minII;
+        /**
+     * 
+      * Returns the iteration_variables vector containing each of the
+      * computation's iteration variables
+      */
+    std::vector<polyfp::var> get_iteration_variables();
 
     isl_map * original_schedule;
     std::map<std::string, std::string > tile_map;
@@ -566,7 +567,7 @@ public:
     bool is_pipelined = false;
     // bool is_first_opt = false;
     int current_factor = 1;
-    int largest_factor = 2;
+    int largest_factor =2;
     std::string iterator_to_skew;
     std::string iterator_to_modify;
     int skew_factor;

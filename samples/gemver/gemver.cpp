@@ -45,21 +45,31 @@ void gemver(
   #pragma HLS interface bram port=v8
   #pragma HLS interface bram port=v9
   #pragma HLS interface bram port=v10
+
   #pragma HLS array_partition variable=v2 cyclic factor=16 dim=1
   #pragma HLS array_partition variable=v2 cyclic factor=16 dim=2
   #pragma HLS resource variable=v2 core=ram_s2p_bram
+
   #pragma HLS resource variable=v3 core=ram_s2p_bram
+
   #pragma HLS resource variable=v4 core=ram_s2p_bram
+
   #pragma HLS array_partition variable=v5 cyclic factor=16 dim=1
   #pragma HLS resource variable=v5 core=ram_s2p_bram
+
   #pragma HLS array_partition variable=v6 cyclic factor=16 dim=1
   #pragma HLS resource variable=v6 core=ram_s2p_bram
+
   #pragma HLS array_partition variable=v7 cyclic factor=16 dim=1
   #pragma HLS resource variable=v7 core=ram_s2p_bram
+
   #pragma HLS array_partition variable=v8 cyclic factor=16 dim=1
   #pragma HLS resource variable=v8 core=ram_s2p_bram
+
   #pragma HLS resource variable=v9 core=ram_s2p_bram
+
   #pragma HLS resource variable=v10 core=ram_s2p_bram
+
   for (int v11 = 0; v11 < 4096; v11 += 1) {	// L6, [0,1048594), iterCycle=17, II=1
     for (int v12 = 0; v12 < 256; v12 += 1) {	// L7, [2129956,2130230), iterCycle=17, II=1
       #pragma HLS pipeline II=1
@@ -298,7 +308,6 @@ void gemver(
     }
   }
   for (int v210 = 0; v210 < 4096; v210 += 1) {	// L241, [2097187,2129957), iterCycle=8, II=8
-    #pragma HLS pipeline II=1
     float v211 = v8[v210];	// L242, [0,2)
     float v212 = v10[v210];	// L243, [0,2)
     float v213 = v211 + v212;	// L244, [2,7)

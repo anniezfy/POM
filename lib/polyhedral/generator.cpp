@@ -338,6 +338,9 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                     if(kv.second->get_type() == polyfp::p_float32){
                         t= builder.getF32Type();  
                     }
+                    if(kv.second->get_type() == polyfp::p_int32){
+                        t= builder.getIntegerType(32); 
+                    }
                     operandTypes.push_back(t);
                     argument_list.push_back(kv.first);
                 }

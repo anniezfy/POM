@@ -29,19 +29,31 @@ int main(){
     auto *fct = global::get_implicit_function();
     var i("i", 0 ,32);
     var j("j", 0 ,32);
+    var k("k", 0 ,32);
     placeholder y("y",{32},p_float32);
     placeholder x("x",{32},p_float32);
     constant scalar(0);
-    compute s_1("s_1",{i,j},x(i)+y(j),x(i));
+
+    compute s_1("s_1",{i,j},scalar,x(i));
+    compute s_2("s_2",{k,i,j},scalar,x(i));
+    //step 1
+    s_2.after(s_1,2);
+    //step 2
+    // s_1.perfection();
+
+
+    // s_1.after(s_2,k);
+
     // compute s_2("s_2",{k,i,j},C(i,j)+A(i,k)*B(k,j),C(i,j));
     // compute s_3("s_3",{i,j},scalar,F(i,j));
     // compute s_4("s_4",{k,j,i},F(i,j)+C(i,k)*D(k,j)+scalar+scalar,F(i,j));
     // compute s_5("s_5",{i,j},scalar,G(i,j));
     // compute s_6("s_6",{k,j,i},G(i,j)+E(i,k)*H(k,j),G(i,j));
     // compute s_7("s_7",{k,j,i},I(i,j)+G(i,k)*F(k,j),I(i,j));
-    s_1.interchange(i,j);
+    // s_1.interchange(i,j);
+    
 
-    var i0("i0"), j0("j0"),i1("i1"), j1("j1"),k1("k1");
+    var i0("i0"), j0("j0"),i1("i1"), j1("j1"),k0("k0"),k1("k1");
     // s_3.after(s_2,-1);
     // s_4.after(s_3,-1);
     // s_5.after(s_4,-1);
@@ -55,12 +67,14 @@ int main(){
     // s.pipeline(j0,1);
     // A.partition({4,4},"cyclic");
     
-    s_1.tile(j,i,1,8,i0,j0,i1,j1);
+    // s_1.tile(i,j,1,2,i0,j0,i1,j1);
+    // s_2.tile(j,k,2,2,i0,j0,i1,j1);
+    // s_2.after(s_1,4);
     // s_4.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);
     // s_6.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);
     // s_7.tile(k,j,i,2,2,16,i0, j0, k0, i1, j1,k1);
-    s_1.unroll(j1,-1);
-    s_1.pipeline(i1,1);
+    // s_1.unroll(j1,-1);
+    // s_1.pipeline(i1,1);
     // s_2.unroll(j1,-1);
     // s_2.unroll(i1,-1);
     // s_4.unroll(k1,-1);

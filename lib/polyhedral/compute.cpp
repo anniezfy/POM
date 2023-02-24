@@ -1443,7 +1443,7 @@ void compute::check_loop_interchange(){
     
     std::cout<<"check_loop_interchange:"<<std::endl;
     for(auto &vector_list : this->map_dependence_vectors){
-        // std::cout<<"???????:"<<std::endl;
+        std::cout<<"???????:"<<std::endl;
         std::vector<std::string> dims_no_dp;
         auto vectors = vector_list.second;
         auto dim_list = vector_list.first->get_access();
@@ -1457,7 +1457,7 @@ void compute::check_loop_interchange(){
                     has_zero = true;
                     zero_number += 1;
                     if (dims_no_dp.size()==0){
-                        // std::cout<<"here1:"<<std::endl;
+                        std::cout<<"dims_no_dp first:"<<std::endl;
                         if(dim_list[i].get_expr_type() == polyfp::e_op){
 
                             // std::cout<<"here2:"<<std::endl;
@@ -1479,23 +1479,47 @@ void compute::check_loop_interchange(){
                     }
                     else{
                         // std::cout<<"here2334:"<<std::endl;
-                        std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),dim_list[i].get_name());
-                        if ( iter==dims_no_dp.end()){
-                            // std::cout<<"here3:"<<std::endl;
-                            if(dim_list[i].get_expr_type()==polyfp::e_op){
+                        std::string name;
+                        if(dim_list[i].get_expr_type()==polyfp::e_op){
 
-                                // std::cout<<"here2:"<<std::endl;
-                                if (dim_list[i].get_operand(0).get_expr_type() == polyfp::e_var){
-                                    dims_no_dp.push_back(dim_list[i].get_operand(0).get_name());
-                                }else if(dim_list[i].get_operand(1).get_expr_type() == polyfp::e_var){
-                                    dims_no_dp.push_back(dim_list[i].get_operand(1).get_name());
-                                }
+                            // std::cout<<"here2:"<<std::endl;
+                            if (dim_list[i].get_operand(0).get_expr_type() == polyfp::e_var){
+                                name = dim_list[i].get_operand(0).get_name();
+                                // dims_no_dp.push_back(dim_list[i].get_operand(0).get_name());
+                            }else if(dim_list[i].get_operand(1).get_expr_type() == polyfp::e_var){
+                                name = dim_list[i].get_operand(0).get_name();
+                                // dims_no_dp.push_back(dim_list[i].get_operand(1).get_name());
                             }
-                            else{
+                            std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),name);
+                            if ( iter==dims_no_dp.end()){
+                                dims_no_dp.push_back(name);
+                            }
+                        }else{
+                            std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),dim_list[i].get_name());
+                            if ( iter==dims_no_dp.end()){
                                 dims_no_dp.push_back(dim_list[i].get_name());
                             }
-                            // std::cout<<"here4:"<<std::endl;
                         }
+                        
+                        // std::cout<<"dims_no_dp second:"<<std::endl;
+                        // dim_list[i].dump(false);
+                        // std::vector<std::string>::iterator iter=find(dims_no_dp.begin(),dims_no_dp.end(),dim_list[i].get_name());
+                        // if ( iter==dims_no_dp.end()){
+                        //     // std::cout<<"here3:"<<std::endl;
+                        //     if(dim_list[i].get_expr_type()==polyfp::e_op){
+
+                        //         // std::cout<<"here2:"<<std::endl;
+                        //         if (dim_list[i].get_operand(0).get_expr_type() == polyfp::e_var){
+                        //             dims_no_dp.push_back(dim_list[i].get_operand(0).get_name());
+                        //         }else if(dim_list[i].get_operand(1).get_expr_type() == polyfp::e_var){
+                        //             dims_no_dp.push_back(dim_list[i].get_operand(1).get_name());
+                        //         }
+                        //     }
+                        //     else{
+                        //         dims_no_dp.push_back(dim_list[i].get_name());
+                        //     }
+                        //     // std::cout<<"here4:"<<std::endl;
+                        // }
                     }
 
                    
@@ -1548,7 +1572,7 @@ void compute::check_loop_interchange(){
         std::vector<polyfp::expr *> dim_order;
         for (auto& i : new_vector_map)
             tmp.push_back(i);
-
+        
         std::sort(tmp.begin(), tmp.end(), [=](std::pair<polyfp::expr *, int>& a, std::pair<polyfp::expr *, int>& b) { return a.second < b.second; });
         // other dims should be moved to outer level first.
         // std::cout<<"new_vector_map:"+ std::to_string(new_vector_map.size())<<std::endl;
@@ -1559,6 +1583,7 @@ void compute::check_loop_interchange(){
                 dim_order.push_back(&other_dim);
             }
         }
+        
         // move dims that have loop carried dependencies.
         // remove all elements with value val
         // coll.erase(remove(coll.begin(), coll.end(), val), coll.end());
@@ -1576,6 +1601,7 @@ void compute::check_loop_interchange(){
             }
 
         }
+        
 
 
     }
@@ -1584,6 +1610,7 @@ void compute::check_loop_interchange(){
     // define confilct: for all comps in the nested loop, number of dims that need to be interchanged should not exceed total dims number-1
 
     // gradually add computes until conflicts occur
+    
     std::vector<std::string> waiting_list;
     bool need_split = false;
     polyfp::compute *comp_to_split ;
@@ -1602,10 +1629,11 @@ void compute::check_loop_interchange(){
             }
         }
     }
+    std::cout<<"finish5"<<std::endl;
 
     if(need_split == true && is_legal == true){
         // TODO: if there is no dependency between comp_to_split and other comps(its leader and component), split it from the nested loop
-        // std::cout<<"???????"+comp_to_split->get_name();
+        std::cout<<"???????"+comp_to_split->get_name();
         int top_level = 0;
         for(auto &dim: waiting_list){
 
@@ -1626,56 +1654,109 @@ void compute::check_loop_interchange(){
     }
     if(need_split == false){
         int top_level = 0;
-        // std::cout<<"here";
+        std::cout<<"here";
         for(auto &dim: waiting_list){
 
             int level = this->get_loop_level_number_from_dimension_name(dim);
             this->interchange(top_level,level);
+            int count = level-top_level-1;
+            if(count!=0){
+                for(int i=0; i<count;i++){
+                    this->interchange(top_level+1+i,level);
+                }
+            }
+            
+
             top_level+=1;
 
         }
         for(auto &map: this->components){
-            // std::cout<<"here22";
-            int top_level2 = 0;
-            for(auto &dim: waiting_list){
-                // std::cout<<"here33";
-                int level = map.first->get_loop_level_number_from_dimension_name(dim);
-                map.first->interchange(top_level2,level);
-                map.first->after(map.first->leader,this->get_iteration_domain_dimensions_number()-1);
-                top_level2+=1;
+            int dims = map.first->get_iteration_variables().size();
+            if(map.first->after_level==dims-1){
+                std::cout<<"here22";
+                int top_level2 = 0;
+                for(auto &dim: waiting_list){
+                    std::cout<<"here33";
+                    int level = map.first->get_loop_level_number_from_dimension_name(dim);
+                    std::cout<<"here34";
+                    //TODO: Potential bugs here
+                    map.first->interchange(top_level2,level);
+                    int count = level-top_level2-1;
+                    if(count!=0){
+                        for(int i=0; i<count;i++){
+                            map.first->interchange(top_level2+1+i,level);
+                        }
+                    }
+                    map.first->after(map.first->leader,this->get_iteration_domain_dimensions_number()-1);
+                    top_level2+=1;
+                    std::cout<<"finish";
+                }
+            
 
-        }
+            }
 
         }
 
     }
+    
     
 
 
 }
 
 void compute::check_loop_skewing(){
+    std::cout<<"enter loop skewing"<<std::endl;
     bool is_legal = false;
-    int factor;
+    int factor=1;
     if(this->map_dependence_vectors.size() == 1){
+        std::cout<<"enter loop skewing1"<<std::endl;
         for(auto &vector_list : this->map_dependence_vectors){
             std::vector<std::string> dims_no_dp;
             auto vectors = vector_list.second;
             auto dim_list = vector_list.first->get_access();
             std::unordered_map<polyfp::expr *, int> new_vector_map;
             //todo
-            if(8>vectors.size()>=4){
-                is_legal = true;
-                factor = 2;
-            }else if(8<=vectors.size()){
+            std::cout<<"vector_list"<<std::endl;
+            std::cout<<vectors.size()<<std::endl;
+            if(8>=vectors.size()&&vectors.size()>=2){
+                std::cout<<"vector_list2"<<std::endl;
                 is_legal = true;
                 factor = 1;
             }
+            else if(8<=vectors.size()){
+                std::cout<<"vector_list3"<<std::endl;
+                is_legal = true;
+                factor = 2;
+            }else{
+                std::cout<<vectors.size()<<std::endl;
+            }
+        }
+        auto iterators = this->get_iteration_variables();
+        int size = iterators.size();
+        std::map<int,polyfp::var> iterator_map;
+        for(auto &iter: iterators){
+            int loc = this->get_loop_level_number_from_dimension_name(iter.get_name());
+            // int loc = comp->iterators_location_map(iter.get_name());
+            std::cout<<iter.get_name()<<std::endl;
+            iterator_map[loc] = iter;
+        }
+        var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+        // s_1.skew(i,j,1,2,i0,j0);
+        
+        if(is_legal == true){
+            std::cout<<"enter loop skewing2"<<std::endl;
+            std::cout<<factor<<std::endl;
+            if(size==3){
+                this->skew(iterator_map[1],iterator_map[2],1,factor,i0,j0);
+            }else if(size==2){
+                this->skew(iterator_map[0],iterator_map[1],1,factor,i0,j0);
+            }
+            
+            this->is_skewed_inDSE = true;
+        }
+        
+
     }
-
-    // this->skew();
-
-}
 }
 
 
@@ -1692,6 +1773,7 @@ void compute::auto_loop_transofrmation(){
 
 void compute::apply_opt_strategy(std::vector<int> tile_size){
     std::map<int,polyfp::var> iterator_map;
+    
     this->set_schedule(this->original_schedule);
     this->set_loop_level_names(this->original_loop_level_name);
     this->directive_map.clear();
@@ -1712,13 +1794,21 @@ void compute::apply_opt_strategy(std::vector<int> tile_size){
         iterator_map[loc] = iter;
     }
 
-    if(size == 3){
+    if(size >= 3){
         // std::cout<<"start tile"<<std::endl;
         // std::cout<<tile_size[0]<<std::endl;
         var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-        if(tile_size[0]<64 && tile_size[1]<64 && tile_size[2]<64){
+
+        if(tile_size[0]<=64 && tile_size[1]<64 && tile_size[2]<64){
             // std::cout<<"start tile1"<<std::endl;
-            this->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+            
+            int temp_index = this->get_iteration_variables().size()-3;
+            if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]==1){
+                        
+            }else{
+                this->tile(iterator_map[temp_index],iterator_map[temp_index+1],iterator_map[temp_index+2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+            }
+            // this->tile(iterator_map[temp_index+0],iterator_map[temp_index+1],iterator_map[temp_index+2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
             if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
                 // std::cout<<"start tile2"<<std::endl;
                 this->pipeline(k0,1);
@@ -1731,25 +1821,67 @@ void compute::apply_opt_strategy(std::vector<int> tile_size){
                 this->unroll(k1,-1);
                 this->unroll(j1,-1);
             }
+            if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]!=1){
+                this->pipeline(iterator_map[temp_index+2],1);
+                // comp->unroll(k1,-1);
+                // comp->unroll(j1,-1);
+                this->unroll(i1,-1);
+            }
             if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]!=1){
                 this->pipeline(k0,1);
                 this->unroll(k1,-1);
                 this->unroll(i1,-1);
             }
+            if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]==1){
+                int lower = stoi(iterator_map[temp_index+2].get_lower().to_str());
+                int upper = stoi(iterator_map[temp_index+2].get_upper().to_str());
+                int range = lower-upper;
+                if(range<=7){
+                    this->pipeline(iterator_map[temp_index+1],1);
+                    this->unroll(iterator_map[temp_index+2],-1);
+                }
+            }
             if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-                this->pipeline(iterator_map[2],1);
-                this->unroll(i1,-1);
-                this->unroll(j1,-1);
+                int lower = stoi(iterator_map[temp_index+2].get_lower().to_str());
+                int upper = stoi(iterator_map[temp_index+2].get_upper().to_str());
+                int range = lower-upper;
+                if(range<=6){
+                    this->pipeline(j0,1);
+                    this->unroll(j1,-1);
+                    this->unroll(i1,-1);
+                    this->unroll(iterator_map[temp_index+2],-1);
+                }else{
+                    this->pipeline(iterator_map[temp_index+2],1);
+                    this->unroll(j1,-1);
+                    this->unroll(i1,-1);
+                    
+                    }
+                
             }
             for(auto &part:this->components){
                 // std::cout<<"start tile3"<<std::endl;
                 part.first->set_schedule(part.first->original_schedule);
                 part.first->set_loop_level_names(part.first->original_loop_level_name);
-                part.first->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+                part.first->tile(iterator_map[temp_index+0],iterator_map[temp_index+1],iterator_map[temp_index+2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
                 if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-                    part.first->after(this,j1);
+                    if(part.first->after_level == 2){
+                        part.first->after(this,j1);
+                    }else if(part.first->after_level == 0){
+                        part.first->after(this,i0);
+                        part.first->pipeline(iterator_map[temp_index+2],1);   
+                    }
+                    // part.first->after(comp,j1);
                 }else{
-                    part.first->after(this,k1);
+                    if(part.first->after_level == 2){
+                        part.first->after(this,k1);
+                    }else if(part.first->after_level == 0){
+                        part.first->after(this,iterator_map[temp_index+0]);
+                        part.first->pipeline(iterator_map[temp_index+2],1);   
+                        //TODO
+                        part.first->unroll(k1,-1);
+                        part.first->unroll(j1,-1);
+                    }
+                    // part.first->after(comp,k1);
                 }
             }
         }
@@ -1796,7 +1928,7 @@ void compute::apply_opt_strategy(std::vector<int> tile_size){
                         part.first->after(this,j1);
                     }else if(part.first->after_level == 0){
                         part.first->after(this,iterator_map[0]);
-                        // std::cout<<"unroll dimension 2"<<std::endl;
+                        std::cout<<"unroll dimension 2"<<std::endl;
                         part.first->pipeline(j0,1);
                         part.first->unroll(j1,-1);
                     }
@@ -2278,6 +2410,10 @@ void compute::tile(polyfp::var L0, polyfp::var L1, polyfp::var L2,
     assert(L1_inner.get_name().length() > 0);
     assert(L2_inner.get_name().length() > 0);
 
+    if(sizeX==0 &&sizeY==0&&sizeZ==0){
+        return;
+    }
+
     this->assert_names_not_assigned({L0_outer.get_name(), L1_outer.get_name(),
                                      L2_outer.get_name(), L0_inner.get_name(),
                                      L1_inner.get_name(), L2_inner.get_name()});
@@ -2577,7 +2713,7 @@ void compute::skew(polyfp::var L0_var, polyfp::var L1_var,
     assert(new_L1_var.get_name().length() > 0);
 
     this->assert_names_not_assigned({new_L0_var.get_name(), new_L1_var.get_name()});
-     std::vector<std::string> original_loop_level_names = this->get_loop_level_names();
+    std::vector<std::string> original_loop_level_names = this->get_loop_level_names();
 
     std::vector<int> dimensions =
         this->get_loop_level_numbers_from_dimension_names({L0_var.get_name(), L1_var.get_name()});

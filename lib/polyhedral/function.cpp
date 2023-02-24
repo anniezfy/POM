@@ -1179,15 +1179,15 @@ void function::gen_isl_ast()
                                 isl_union_map_to_str(umap)));
     DEBUG(3, polyfp::str_dump("\n"));
 
-    polyfp::str_dump("Schedule:", isl_union_map_to_str(this->get_schedule()));
-    polyfp::str_dump("Iteration domain:",
-                                isl_union_set_to_str(this->get_iteration_domain()));
-    polyfp::str_dump("Trimmed Time-Processor domain:",
-                                isl_union_set_to_str(this->get_trimmed_time_processor_domain()));
-    polyfp::str_dump("Trimmed Time-Processor aligned identity schedule:",
-                                isl_union_map_to_str(this->get_aligned_identity_schedules()))  ;        
-    polyfp::str_dump("Identity schedule intersect trimmed Time-Processor domain:",
-                                isl_union_map_to_str(umap));    
+    // polyfp::str_dump("Schedule:", isl_union_map_to_str(this->get_schedule()));
+    // polyfp::str_dump("Iteration domain:",
+    //                             isl_union_set_to_str(this->get_iteration_domain()));
+    // polyfp::str_dump("Trimmed Time-Processor domain:",
+    //                             isl_union_set_to_str(this->get_trimmed_time_processor_domain()));
+    // polyfp::str_dump("Trimmed Time-Processor aligned identity schedule:",
+    //                             isl_union_map_to_str(this->get_aligned_identity_schedules()))  ;        
+    // polyfp::str_dump("Identity schedule intersect trimmed Time-Processor domain:",
+    //                             isl_union_map_to_str(umap));    
     const char *s; 
     s = "[N,M,K] -> {s_2[i,j,k] -> [0, i, 0, j, 0, k, 10] : 0 <= i <= N and 0 <= j <= M and 0 <= k <= K; s_1[i, j, k] -> [0, i, 0, j, 0, k, 0] : 0 <= i <= N and 0 <= j <= M and 0 <= k <= 1 }";
     // s_2[0, i, 0, j, 0, k, 0] -> [0, i' = i, 0, j' = j, 0, k' = k, 0] : 0 <= i <= 4095 and 0 <= j <= 4095 and 0 <= k <= 4095; 
@@ -1210,6 +1210,7 @@ void polyfp::function::dependence_analysis(){
     for(auto &comp: this->leader_computations){
         comp->compute_dependence_vectors();
         comp->auto_loop_transofrmation();
+        // std::cout<<"finish"<<std::endl;
     }
 
 
@@ -1334,6 +1335,13 @@ void polyfp::function::compute_dependency_graph(){
 
 void polyfp::function::auto_DSE(std::string path){
     this->auto_DSE_loop_transformation();
+    for(auto &comp: this->leader_computations){
+        if(comp->is_skewed_inDSE == true){
+            std::cout<<"enter loop skewing3"<<std::endl;
+            this->dump_schedule(path);
+            return;
+        }
+    }
     this->evaluate_func();
     auto comp = this->update_latency();
     this->best_latency = this->current_latency;
@@ -1346,8 +1354,8 @@ void polyfp::function::auto_DSE(std::string path){
     this->auto_DSE_tile_size(comp,factor,path); 
     
     for(auto &comp: this->leader_computations){
-        std::cout<< comp->get_name()<<std::endl;
-        std::cout<<"enter here22"<<std::endl;
+        // std::cout<< comp->get_name()<<std::endl;
+        // std::cout<<"enter here22"<<std::endl;
         comp->set_schedule(comp->original_schedule);
         comp->set_loop_level_names(comp->original_loop_level_name);
         comp->directive_map.clear();
@@ -1385,8 +1393,8 @@ void polyfp::function::auto_DSE(std::string path){
                     // std::cout<<iter.get_name()<<std::endl;
                     iterator_map[loc] = iter;
                 }
-                if(size == 3){
-                    comp->pipeline(iterator_map[2],1);
+                if(size >= 3){
+                    comp->pipeline(iterator_map[size-3+2],1);
                 }else if(size == 2){
                     comp->pipeline(iterator_map[1],1);
                 }
@@ -1405,8 +1413,8 @@ void polyfp::function::auto_DSE(std::string path){
                 // std::cout<<iter.get_name()<<std::endl;
                 iterator_map[loc] = iter;
             }
-            if(size == 3){
-                comp->pipeline(iterator_map[2],1);
+            if(size >= 3){
+                comp->pipeline(iterator_map[size-3+2],1);
             }else if(size == 2){
                 comp->pipeline(iterator_map[1],1);
             }if(size == 1){
@@ -1448,18 +1456,18 @@ void polyfp::function::auto_DSE_loop_transformation(){
         std::vector<std::string> current_name_list = this->leader_computations[i]->get_loop_level_names();
         int final_size = this->leader_computations[i]->final_loop_level_names.size();
         int current_size = current_name_list.size();
-        std::cout<<"final_size"<<std::endl;
-        std::cout<<final_size<<std::endl;
-        std::cout<<current_size<<std::endl;
+        // std::cout<<"final_size"<<std::endl;
+        // std::cout<<final_size<<std::endl;
+        // std::cout<<current_size<<std::endl;
         if(final_size == current_size){
-            std::cout<<"here???"<<std::endl;
+            // std::cout<<"here???"<<std::endl;
             // for(this->leader_computations[i]->components){
             //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
             // }
             this->leader_computations[i]->final_loop_level_names = current_name_list;
             this->leader_computations[i]->final_loop_level_names_reserved = current_name_list;
         }else if(final_size < current_size){
-            std::cout<<"here?????"<<std::endl;
+            // std::cout<<"here?????"<<std::endl;
             for(int i=0; i<final_size; i++){
                 this->leader_computations[i]->final_loop_level_names[i] = current_name_list[i];
                 this->leader_computations[i]->final_loop_level_names_reserved[i] = current_name_list[i];
@@ -1472,11 +1480,11 @@ void polyfp::function::auto_DSE_loop_transformation(){
             part.first->original_loop_level_name = part.first->get_loop_level_names();
             part.first->original_schedule = part.first->get_schedule();
         }
-        std::cout<<"name of loop level:"+leader_computations[i]->original_loop_level_name[0]<<std::endl;
+        // std::cout<<"name of loop level:"+leader_computations[i]->original_loop_level_name[0]<<std::endl;
         if(leader_computations[i]->is_leaf == true){
             this->leaf_computations.push_back(leader_computations[i]);
         }
-        std::cout<<"iteration finished:"<<std::endl;
+        // std::cout<<"iteration finished:"<<std::endl;
 
     }
 
@@ -1484,11 +1492,11 @@ void polyfp::function::auto_DSE_loop_transformation(){
         std::vector<std::string> current_name_list = comp->get_loop_level_names();
         int final_size = comp->final_loop_level_names.size();
         int current_size = current_name_list.size();
-        std::cout<<"final_size"<<std::endl;
-        std::cout<<final_size<<std::endl;
-        std::cout<<current_size<<std::endl;
+        // std::cout<<"final_size"<<std::endl;
+        // std::cout<<final_size<<std::endl;
+        // std::cout<<current_size<<std::endl;
         if(final_size == current_size){
-            std::cout<<"here???"<<std::endl;
+            // std::cout<<"here???"<<std::endl;
             // for(this->leader_computations[i]->components){
             //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
             // }
@@ -1537,8 +1545,11 @@ void polyfp::function::dump_schedule(std::string path){
 
     
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);
-
-   for(auto &comp : this->leader_computations){
+    bool skew_flag = false;
+    for(auto &comp : this->leader_computations){
+        if(comp->is_skewed_inDSE == true){
+            skew_flag = true;
+        }
         int index = this->leader_computation_index[comp];
         int position = manager.start_loops_position[index];
         // std::cout<<"position:";
@@ -1560,7 +1571,23 @@ void polyfp::function::dump_schedule(std::string path){
                         mlir::scalehls::setLoopDirective(manager.ops[loc-i], false, comp->II, false, true);
                     }
                 }
-            }             
+            }     
+            for(auto &sub_comps: comp->components ){
+                auto sub_comp = sub_comps.first;
+                // if(sub_comp->after_level)
+                for(auto &kv : sub_comp->get_directive_map()){
+                    if(kv.second == "pipeline"){
+                        int loc_2 = sub_comp->get_loop_level_number_from_dimension_name(kv.first);
+                        int loc = sub_comp->iterators_location_map[kv.first];
+                        // index = loc + index;
+                        mlir::scalehls::setLoopDirective(manager.ops[loc], true, sub_comp->II, false, false);
+                        for(int i=1; i<=loc_2; i++){
+                            mlir::scalehls::setLoopDirective(manager.ops[loc-i], false, sub_comp->II, false, true);
+                        }
+                    }
+                }  
+            }
+                   
         }
                 
     }
@@ -1587,6 +1614,22 @@ void polyfp::function::dump_schedule(std::string path){
                     mlir::loopUnrollFull(manager.ops[loc]);
                 }
             }  
+            for(auto &sub_comps:comp->components){
+                auto sub_comp = sub_comps.first;
+                for(int i=0; i<comp->unroll_dimension.size(); i++){
+                    if(sub_comp->unroll_dimension.size()!=0){
+                        int loc = sub_comp->iterators_location_map[sub_comp->unroll_dimension[i].get_name()];
+                        // std::cout<<"loc"<<std::endl;
+                        // std::cout<<loc<<std::endl;
+                        // loc = loc + bias;
+                        if(sub_comp->unroll_factor[i] != -1){
+                            mlir::loopUnrollUpToFactor(manager.ops[loc],sub_comp->unroll_factor[i]);
+                        }else{
+                            mlir::loopUnrollFull(manager.ops[loc]);
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -1621,20 +1664,24 @@ void polyfp::function::dump_schedule(std::string path){
     if(manager.start_loops_position.size() == 0){
         manager.start_loops_position.push_back(0);
     }
+    if(skew_flag == false){
+        mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
+            for(auto &loop: manager.start_loops_position ){
+            // std::cout<<"loop: "+std::to_string(loop)<<std::endl;
+            // std::cout<<"size: "+std::to_string(manager.ops.size())<<std::endl;
+            mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[loop],manager.funcs[0]);
+            // manager.getModule().dump(); 
+            auto latency = mlir::scalehls::getTiming(manager.ops[loop]).getLatency();
+            std::cout<<"latency: "+std::to_string(latency)<<std::endl;
+            auto dspNum = mlir::scalehls::getResource(manager.ops[loop]).getDsp();
+            std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
+        }
 
-    mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(manager.funcs[0]);
-
-
-    for(auto &loop: manager.start_loops_position ){
-        // std::cout<<"loop: "+std::to_string(loop)<<std::endl;
-        // std::cout<<"size: "+std::to_string(manager.ops.size())<<std::endl;
-        mlir::scalehls::ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateLoop(manager.ops[loop],manager.funcs[0]);
-        // manager.getModule().dump(); 
-        auto latency = mlir::scalehls::getTiming(manager.ops[loop]).getLatency();
-        std::cout<<"latency: "+std::to_string(latency)<<std::endl;
-        auto dspNum = mlir::scalehls::getResource(manager.ops[loop]).getDsp();
-        std::cout<<"dsp: "+std::to_string(dspNum)<<std::endl;
     }
+    
+
+
+    
             
 
     auto module = manager.getModule();
@@ -1681,7 +1728,7 @@ void polyfp::function::evaluate_func(){
     // }
 
     for(auto &comp: this->leader_computations){
-        // std::cout<< comp->get_name()<<std::endl;
+        std::cout<< comp->get_name()<<std::endl;
         // std::cout<<"enter here2"<<std::endl;
         // std::cout<<"enter here3"<<std::endl;
         if(comp->is_optimized == true && this->current_opt_comp!= NULL &&this->current_opt_comp->get_name()!=comp->get_name()){
@@ -1712,10 +1759,26 @@ void polyfp::function::evaluate_func(){
                     // std::cout<<iter.get_name()<<std::endl;
                     iterator_map[loc] = iter;
                 }
-                if(size == 3){
-                    comp->pipeline(iterator_map[2],1);
+                if(size >= 3){
+                    comp->pipeline(iterator_map[size-3+2],1);
+                    for(auto &sub_comps: comp->components){
+                        auto sub_comp = sub_comps.first;
+                        //todo, right pipeline level
+                        if(sub_comp->after_level !=2){   
+                            sub_comp->pipeline(iterator_map[size-3+2],1);
+                        }
+                    }
                 }else if(size == 2){
                     comp->pipeline(iterator_map[1],1);
+                    for(auto &sub_comps: comp->components){
+                        auto sub_comp = sub_comps.first;
+                        //todo, right pipeline level
+                        // std::cout<< "22!!!!!!!!!!!!!!!"<<std::endl;
+                        if(sub_comp->after_level !=1){   
+                            
+                            sub_comp->pipeline(iterator_map[1],1);
+                        }
+                    }
                 }else if(size == 1){
                     comp->pipeline(iterator_map[0],1);
                 }
@@ -1747,17 +1810,33 @@ void polyfp::function::evaluate_func(){
                 // std::cout<<iter.get_name()<<std::endl;
                 iterator_map[loc] = iter;
             }
-            if(size == 3){
-                comp->pipeline(iterator_map[2],1);
+            if(size >= 3){
+                comp->pipeline(iterator_map[size-3+2],1);
+                for(auto &sub_comps: comp->components){
+                    auto sub_comp = sub_comps.first;
+                    //todo, right pipeline level
+                    if(sub_comp->after_level !=2){   
+                        sub_comp->pipeline(iterator_map[size-3+2],1);
+                    }
+                }
             }else if(size == 2){
                 comp->pipeline(iterator_map[1],1);
+                // std::cout<< "!!!!!!!!!!!!!!!"<<std::endl;
+                for(auto &sub_comps: comp->components){
+                    auto sub_comp = sub_comps.first;
+                    //todo, right pipeline level
+                    if(sub_comp->after_level !=1){   
+                        // std::cout<< "2!!!!!!!!!!!!!!!"<<std::endl;
+                        sub_comp->pipeline(iterator_map[1],1);
+                    }
+                }
             }else if(size == 1){
                 comp->pipeline(iterator_map[0],1);
             }
         }
-        // else{
-        //     std::cout<<"?????????"<<std::endl;
-        // }
+        else{
+            std::cout<<"?????????"<<std::endl;
+        }
     }
 
 
@@ -1780,7 +1859,7 @@ void polyfp::function::evaluate_func(){
 
     
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);
-
+    
     for(auto &comp : this->leader_computations){
         int index = this->leader_computation_index[comp];
         int position = manager.start_loops_position[index];
@@ -1827,6 +1906,7 @@ void polyfp::function::evaluate_func(){
     //         }   
     //     }
     // }
+    
     for(auto &comp: this->leader_computations){
         // std::cout<<"comp->get_name()"<<std::endl;
         if(comp->is_unrolled == true){
@@ -1834,7 +1914,7 @@ void polyfp::function::evaluate_func(){
             for(int i=0; i<comp->unroll_dimension.size(); i++){
                 // int bias = comp->get_loop_level_number_from_dimension_name(comp->unroll_dimension[i].get_name());
                 // int loc = fct.leader_computation_index[comp];
-                // std::cout<<comp->unroll_dimension[i].get_name();
+                std::cout<<comp->unroll_dimension[i].get_name();
                 int loc = comp->iterators_location_map[comp->unroll_dimension[i].get_name()];
                 // std::cout<<"loc"<<std::endl;
                 // std::cout<<loc<<std::endl;
@@ -1844,10 +1924,26 @@ void polyfp::function::evaluate_func(){
                 }else{
                     mlir::loopUnrollFull(manager.ops[loc]);
                 }
+                
             }  
+            for(auto &sub_comps:comp->components){
+                auto sub_comp = sub_comps.first;
+                // std::cout<<"loc1"<<std::endl;
+                for(int i=0; i<sub_comp->unroll_dimension.size(); i++){
+                    int loc = sub_comp->iterators_location_map[sub_comp->unroll_dimension[i].get_name()];
+                    // std::cout<<"loc"<<std::endl;
+                    // std::cout<<loc<<std::endl;
+                    // loc = loc + bias;
+                    if(sub_comp->unroll_factor[i] != -1){
+                        mlir::loopUnrollUpToFactor(manager.ops[loc],sub_comp->unroll_factor[i]);
+                    }else{
+                        mlir::loopUnrollFull(manager.ops[loc]);
+                    }
+                }
+            }
         }
     }
-
+    // std::cout<<"finish codegen: "<<std::endl;
     mlir::scalehls::applyMemoryOpts(manager.get_funcs()[0]);
     mlir::scalehls::applyAutoArrayPartition(manager.get_funcs()[0]);
     SmallVector<int64_t, 8> factors;
@@ -1940,8 +2036,7 @@ void polyfp::function::evaluate_func(){
 void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std::string path){
     std::cout<<"Currently optimized compute: "<<comp->get_name()<<std::endl;
     int scale;
-
-    
+    //TODO components的domain跟leader不一样
     comp->set_schedule(comp->original_schedule);
     comp->set_loop_level_names(comp->original_loop_level_name);
     comp->directive_map.clear();
@@ -1951,10 +2046,89 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
     comp->tile_map.clear();
     comp->tile_size_map.clear();
     comp->access_map.clear();
+    auto iterators = comp->get_iteration_variables();
+    std::vector<polyfp::var> temp_iterators;
+    int temp_size = iterators.size();
+    
+    if(temp_size>3){
+        int border = temp_size-3;
+        for(auto &iter: iterators){
+            std::cout<<"Dimension name: "+iter.get_name()<<std::endl;
+            int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
+            if(loc>=border){
+                temp_iterators.push_back(iter);
+            }
+            // // int loc = comp->iterators_location_map(iter.get_name());
+            // std::cout<<iter.get_name()<<std::endl;
+            // std::cout<<loc<<std::endl;
+            // iterator_map[loc] = iter;
+        }
+        iterators.clear();
+        iterators=temp_iterators;
+
+    }
+
+    std::vector<int> dim_ranges;
+    std::map<int, std::vector<int>> dim_tile_sizes;
+    bool not_2_pow = false;
+    int count = 0;
+    for(auto &iter: iterators){
+        int lower = stoi(iter.get_lower().to_str());
+        int upper = stoi(iter.get_upper().to_str());
+        int range = upper-lower;
+        dim_ranges.push_back(range);
+        std::vector<int> temp;
+        if(range%32 != 0){
+            not_2_pow = true;
+            for(int i=2; i<range; i++){
+                // std::cout<<range<<std::endl;
+                // std::cout<<i<<std::endl;
+                if(range % i == 0){
+                    std::cout<<"here"<<std::endl;
+                    if(i == 2){
+                        temp.push_back(i);   
+                        std::cout<<"i:";
+                        std::cout<<i<<std::endl;
+                    }
+                    // else if(i == 3||i==5 ||i==7){
+                    //     temp.push_back(i);   
+                    //     std::cout<<"i=3:";
+                    //     std::cout<<i<<std::endl;
+                    // }
+                    // else if(i%2 == 0 && i%4 == 0){
+                    //     temp.push_back(i);  
+                    //     std::cout<<"i:";
+                    //     std::cout<<i<<std::endl; 
+                    // }
+                    
+                }
+
+            }
+            if(temp.size()==0){
+                temp.push_back(1);  
+            }
+        }else{
+            temp.push_back(1);   
+        }
+        std::cout<<"range:";
+        std::cout<<range<<std::endl;
+        dim_tile_sizes.insert(std::make_pair(count,temp));
+        count++;
+    }
+    
+    // comp->set_schedule(comp->original_schedule);
+    // comp->set_loop_level_names(comp->original_loop_level_name);
+    // comp->directive_map.clear();
+    // comp->is_unrolled = false;
+    // comp->unroll_factor.clear();
+    // comp->unroll_dimension.clear();
+    // comp->tile_map.clear();
+    // comp->tile_size_map.clear();
+    // comp->access_map.clear();
     
     //TODO: SKEW MAP
     std::map<int,polyfp::var> iterator_map;
-    auto iterators = comp->get_iteration_variables();
+    // auto iterators = comp->get_iteration_variables();
     int size = iterators.size();
     // if(size == 3){
     //     scale = 8*pow(2,factor-1);
@@ -1966,7 +2140,8 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
     for(auto &iter: iterators){
         int loc = comp->get_loop_level_number_from_dimension_name(iter.get_name());
         // int loc = comp->iterators_location_map(iter.get_name());
-        // std::cout<<iter.get_name()<<std::endl;
+        std::cout<<iter.get_name()<<std::endl;
+        std::cout<<loc<<std::endl;
         iterator_map[loc] = iter;
     }
 
@@ -2015,11 +2190,11 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
             
             for(int i=0; i<num; i++){
-                // int node_index = current_longest_path[i]; 
+                int node_index = current_longest_path[i]; 
                 // std::cout<<"the node index"+std::to_string(node_index);
-                // int final_index = this->path_map[path_index][node_index];
-                int final_index = current_longest_map[current_longest_path_latency[i]];
-                std::cout<<"the final_index"+std::to_string(final_index);
+                int final_index = this->path_map[path_index][node_index];
+                // int final_index = current_longest_map[current_longest_path_latency[i]];
+                // std::cout<<"the final_index"+std::to_string(final_index);
                 std::map<polyfp::compute *,int>::iterator it;
                 polyfp::compute *comp;
                 for( it= this->leader_computation_index.begin();it!=this->leader_computation_index.end();it++) {
@@ -2088,23 +2263,50 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
         myfile << "cycle,dsp,ii\n";     
     }
  
-    if(size == 3){
+    if(size >= 3){
         //todo, here 4 is desided by the scale
 
-        //config: 5,3
-        for(int i = 0; i<5+factor; i++){
-            factor1 = pow(2,i);
-            for(int j = 0; j<3+factor-i; j++){
-                factor2 = pow(2,j);
-                factor3 = scale/factor2/factor1;
-                tilesize_list.push_back({factor1,factor2,factor3});
-                std::cout<<"tile factor: ";
-                std::cout<<factor1;
-                std::cout<<"; ";
-                std::cout<<factor2;
-                std::cout<<"; ";
-                std::cout<<factor3<<std::endl;
+        if(not_2_pow == false){
+            //config: 5,3
+            for(int i = 0; i<5+factor; i++){
+                factor1 = pow(2,i);
+                for(int j = 0; j<3+factor-i; j++){
+                    factor2 = pow(2,j);
+                    factor3 = scale/factor2/factor1;
+                    tilesize_list.push_back({factor1,factor2,factor3});
+                    std::cout<<"tile factor: ";
+                    std::cout<<factor1;
+                    std::cout<<"; ";
+                    std::cout<<factor2;
+                    std::cout<<"; ";
+                    std::cout<<factor3<<std::endl;
+                }
             }
+        }else{
+            std::vector<int> dim0 = dim_tile_sizes[0];
+            std::vector<int> dim1 = dim_tile_sizes[1];
+            std::vector<int> dim2 = dim_tile_sizes[2];
+            if(dim0.size()==0){
+                dim0.push_back(1);
+            }
+            if(dim1.size()==0){
+                dim1.push_back(1);
+            }
+            for(auto &size0: dim0){
+                for(auto &size1: dim1){
+                    for(auto &size2: dim2){
+                        tilesize_list.push_back({size0,size1,size2});
+                        std::cout<<"tile factor: ";
+                        std::cout<<size0;
+                        std::cout<<"; ";
+                        std::cout<<size1;
+                        std::cout<<"; ";
+                        std::cout<<size2<<std::endl;
+                    }
+                }
+            }
+            comp->current_factor=3;
+
         }
         // tilesize_list.push_back({1,8,16});
         // tilesize_list.push_back({1,16,4});
@@ -2132,7 +2334,20 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
                 var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
                 if(tile_size[0]<16 && tile_size[1]<32 && tile_size[2]<32){
-                    comp->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+                // if(tile_size[0]<=64 && tile_size[1]<=2 && tile_size[2]<=2){
+                // if(tile_size[0]<2 && tile_size[1]<4 && tile_size[2]<4){
+                    // std::cout<<"here1"<<std::endl;
+                    int temp_index = comp->get_iteration_variables().size()-3;
+                    // std::cout<<iterator_map[0].get_name()<<std::endl;
+                    // std::cout<<iterator_map[1].get_name()<<std::endl;
+                    // std::cout<<iterator_map[2].get_name()<<std::endl;
+                    if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]==1){
+                        
+                    }else{
+                        comp->tile(iterator_map[temp_index],iterator_map[temp_index+1],iterator_map[temp_index+2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+                    }
+                    
+                    // std::cout<<"here"<<std::endl;
                     if(tile_size[2]!=1 && tile_size[1]!=1 && tile_size[0]!=1){
                         comp->pipeline(k0,1);
                         comp->unroll(k1,-1);
@@ -2149,24 +2364,60 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         comp->unroll(k1,-1);
                         comp->unroll(i1,-1);
                     }
+                    if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]==1){
+                        int lower = stoi(iterator_map[temp_index+2].get_lower().to_str());
+                        int upper = stoi(iterator_map[temp_index+2].get_upper().to_str());
+                        int range = lower-upper;
+                        if(range<=7){
+                            comp->pipeline(iterator_map[temp_index+1],1);
+                            comp->unroll(iterator_map[temp_index+2],-1);
+                        }
+                    }
                     if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-                        comp->pipeline(iterator_map[2],1);
-                        comp->unroll(i1,-1);
-                        comp->unroll(j1,-1);
+                        std::cout<<"!!!!!!!!!!!!!!!"<<std::endl;
+                        int lower = stoi(iterator_map[temp_index+2].get_lower().to_str());
+                        int upper = stoi(iterator_map[temp_index+2].get_upper().to_str());
+                        int range = lower-upper;
+                        if(range<=6){
+                            comp->pipeline(j0,1);
+                            comp->unroll(j1,-1);
+                            comp->unroll(i1,-1);
+                            comp->unroll(iterator_map[temp_index+2],-1);
+                        }else{
+                            comp->pipeline(iterator_map[temp_index+2],1);
+                            comp->unroll(j1,-1);
+                            comp->unroll(i1,-1);
+                        }
+                        
                     }
                     for(auto &part:comp->components){
                         part.first->set_schedule(part.first->original_schedule);
                         part.first->set_loop_level_names(part.first->original_loop_level_name);
-                        part.first->tile(iterator_map[0],iterator_map[1],iterator_map[2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
+                        part.first->tile(iterator_map[temp_index+0],iterator_map[temp_index+1],iterator_map[temp_index+2],tile_size[0],tile_size[1],tile_size[2],i0, j0, k0, i1, j1, k1);
                         if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
-                            part.first->after(comp,j1);
+                            if(part.first->after_level == 2){
+                                part.first->after(comp,j1);
+                            }else if(part.first->after_level == 0){
+                                part.first->after(comp,i0);
+                                part.first->pipeline(iterator_map[temp_index+2],1);   
+                            }
+                            // part.first->after(comp,j1);
                         }else{
-                            part.first->after(comp,k1);
+                            if(part.first->after_level == 2){
+                                part.first->after(comp,k1);
+                            }else if(part.first->after_level == 0){
+                                part.first->after(comp,iterator_map[temp_index+0]);
+                                part.first->pipeline(iterator_map[temp_index+2],1);   
+                                //TODO
+                                part.first->unroll(k1,-1);
+                                part.first->unroll(j1,-1);
+                            }
+                            // part.first->after(comp,k1);
                         }
                     }
                     int II = 1;
                     this->current_opt_comp = comp;
-                    if(this->leader_computations.size() == 1){                          
+                    if(this->leader_computations.size() == -1){                          
                         this->evaluate_func();
                         if(this->current_latency < this->best_latency && this->dsp_max>= this->dsp_usage){
                             this->best_latency = this->current_latency;
@@ -2197,9 +2448,9 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         std::sort(current_longest_path_latency.begin(),current_longest_path_latency.end(),std::greater<long>());
                         bool comp_flag = false;
                         for(int i=0; i<num; i++){
-                            // int node_index = current_longest_path[i]; 
-                            // int final_index = this->path_map[path_index][node_index];
-                            int final_index = current_longest_map[current_longest_path_latency[i]];
+                            int node_index = current_longest_path[i]; 
+                            int final_index = this->path_map[path_index][node_index];
+                            // int final_index = current_longest_map[current_longest_path_latency[i]];
                             std::cout<<"the final_index"+std::to_string(final_index);
                             std::map<polyfp::compute *,int>::iterator it;
                             polyfp::compute *comp;
@@ -2277,6 +2528,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                 comp->apply_opt_strategy(comp->final_strategy);
                 this->evaluate_func();
                 auto new_comp = this->update_latency();
+                std::cout<<"next comp: "+new_comp->get_name()<<std::endl;
                 auto_DSE_tile_size(new_comp, 1,path);
             }else if(current_design.size()!=0){
                 comp->current_strategy = current_design;
@@ -2293,18 +2545,38 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
         myfile.close();
     }
     else if(size == 2){
-        for(int j = 0; j<2+factor; j++){
-            std::cout<<"factor size: ";
-            std::cout<<factor;
-            factor1 = pow(2,j);
-            factor2 = scale/factor1;
-            tilesize_list.push_back({factor1,factor2});
-            std::cout<<"tile factor: ";
-            std::cout<<factor1;
-            std::cout<<"; ";
-            std::cout<<factor2<<std::endl;
+        if(not_2_pow == false){
+            for(int j = 0; j<2+factor; j++){
+                std::cout<<"factor size: ";
+                std::cout<<factor;
+                factor1 = pow(2,j);
+                factor2 = scale/factor1;
+                tilesize_list.push_back({factor1,factor2});
+                std::cout<<"tile factor: ";
+                std::cout<<factor1;
+                std::cout<<"; ";
+                std::cout<<factor2<<std::endl;
             
+            }
+        }else{
+            std::vector<int> dim0 = dim_tile_sizes[0];
+            std::vector<int> dim1 = dim_tile_sizes[1];
+            if(dim0.size()==0){
+                dim0.push_back(1);
+            }
+            for(auto &size0: dim0){
+                for(auto &size1: dim1){
+                    tilesize_list.push_back({size0,size1});
+                    std::cout<<"tile factor: ";
+                    std::cout<<size0;
+                    std::cout<<"; ";
+                    std::cout<<size1<<std::endl;
+                }
+            }
+            comp->current_factor=3;
+
         }
+        
         // tilesize_list.push_back({1,2});
         bool larger_factor = true;
         for(auto &tile_size: tilesize_list){
@@ -2322,6 +2594,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
             // this->gen_c_code();
             var i0("i0"), j0("j0"), i1("i1"), j1("j1");
             if(tile_size[0]<=32 && tile_size[1]<=32){
+            // if(tile_size[0]<2 && tile_size[1]<4){
                 comp->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
                 if(tile_size[1]!=1&&tile_size[0]!=1){
                     comp->pipeline(j0,1);
@@ -2339,16 +2612,37 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                     part.first->set_loop_level_names(part.first->original_loop_level_name);
                     part.first->tile(iterator_map[0],iterator_map[1],tile_size[0],tile_size[1],i0, j0, i1, j1);
                     if(tile_size[1]!=1&&tile_size[0]!=1){
-                        part.first->after(comp,j1);
+                        if(part.first->after_level == 1){
+                            
+                            part.first->after(comp,j1);
+                        }else if(part.first->after_level == 0){
+                            part.first->pipeline(j0,1);
+                            part.first->after(comp,i0);
+                            // part.first->unroll(j1,-1);
+                            // part.first->unroll(i1,-1);
+                        }
+                        
                     }else if(tile_size[1]==1&&tile_size[0]!=1){
-                        part.first->after(comp,i1);
+                        if(part.first->after_level == 1){
+                            part.first->after(comp,i1);
+                        }else if(part.first->after_level == 0){
+                            part.first->after(comp,i0);
+                            part.first->pipeline(iterator_map[1],1);
+                            
+                        }
+                        // part.first->after(comp,i1);
                     }else if(tile_size[0]==1&&tile_size[1]!=1){
-                        part.first->after(comp,j1);
-                        // codegen();
+                        if(part.first->after_level == 1){
+                            part.first->after(comp,j1);
+                        }else if(part.first->after_level == 0){
+                            part.first->pipeline(j0,1);
+                            part.first->after(comp,iterator_map[0]);
+                            // std::cout<<"unroll dimension 2"<<std::endl;
+                            part.first->unroll(j1,-1);
+                        }
                     }
                 
                 }
-                // codegen();
                 this->current_opt_comp = comp;
                 if(this->leader_computations.size() == -1){
                     // std::cout<<"we got here in if"<<std::endl;                   
@@ -2369,7 +2663,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
 
                 }
                 else{  
-                    std::cout<<"before evaluate"<<std::endl;
+                    // std::cout<<"before evaluate"<<std::endl;
                     this->evaluate_func();
                     // auto new_comp = this->update_latency();
                     polyfp::compute * new_comp = NULL;
@@ -2391,7 +2685,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         // int node_index = current_longest_path[i]; 
                         // int final_index = this->path_map[path_index][node_index];
                         int final_index = current_longest_map[current_longest_path_latency[i]];
-                        std::cout<<"the final_index"+std::to_string(final_index);
+                        // std::cout<<"the final_index"+std::to_string(final_index);
                         std::map<polyfp::compute *,int>::iterator it;
                         polyfp::compute *comp;
                         for( it= this->leader_computation_index.begin();it!=this->leader_computation_index.end();it++) {
@@ -2401,7 +2695,7 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                                 // std::cout<<"finished list"<<std::endl;
                                 if (std::find(finish_list.begin(), finish_list.end(), name) == finish_list.end()){
                                     // std::cout<<"new comp list"<<std::endl;
-                                    std::cout<<"new comp list:"+comp->get_name()<<std::endl;
+                                    // std::cout<<"new comp list:"+comp->get_name()<<std::endl;
                                     // auto_DSE_tile_size(comp, 1,path);
                                     new_comp = comp;
                                     comp_flag = true;
@@ -2535,7 +2829,7 @@ bool cmp_value(const std::pair<int, long> left, const std::pair<int,long> right)
 }
 int polyfp::function::get_longest_path(){
     auto i= std::max_element(this->all_latency_map.begin(),this->all_latency_map.end(),cmp_value);
-    std::cout << i->first << i->second << std::endl;
+    // std::cout << i->first << i->second << std::endl;
     return i->first;
 
 }
@@ -2614,27 +2908,28 @@ polyfp::compute * polyfp::function::update_latency(){
 
 void polyfp::function::codegen()
 {   
-    // for(auto &comp:this->get_body()){
-    //     std::vector<std::string> current_name_list = comp->get_loop_level_names();
-    //     int final_size = comp->final_loop_level_names.size();
-    //     int current_size = current_name_list.size();
-    //     // std::cout<<"final_size"<<std::endl;
-    //     // std::cout<<final_size<<std::endl;
-    //     // std::cout<<current_size<<std::endl;
-    //     if(final_size == current_size){
-    //         // std::cout<<"here???"<<std::endl;
-    //         // for(this->leader_computations[i]->components){
-    //         //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
-    //         // }
-    //         comp->final_loop_level_names = current_name_list;
-    //         comp->final_loop_level_names_reserved = current_name_list;
-    //     }else if(final_size < current_size){
-    //         for(int i=0; i<final_size; i++){
-    //             comp->final_loop_level_names[i] = current_name_list[i];
-    //             comp->final_loop_level_names_reserved[i] = current_name_list[i];
-    //         }
-    //     }
-    // }
+    for(auto &comp:this->get_body()){
+        std::vector<std::string> current_name_list = comp->get_loop_level_names();
+        int final_size = comp->final_loop_level_names.size();
+        int current_size = current_name_list.size();
+        // std::cout<<"final_size"<<std::endl;
+        // std::cout<<final_size<<std::endl;
+        // std::cout<<current_size<<std::endl;
+        if(final_size == current_size){
+            // std::cout<<"here???"<<std::endl;
+            // for(this->leader_computations[i]->components){
+            //     int final_size = this->leader_computations[i]->final_loop_level_names.size();
+            // }
+            comp->final_loop_level_names = current_name_list;
+            comp->final_loop_level_names_reserved = current_name_list;
+        }else if(final_size < current_size){
+            for(int i=0; i<final_size; i++){
+                comp->final_loop_level_names[i] = current_name_list[i];
+                comp->final_loop_level_names_reserved[i] = current_name_list[i];
+            }
+        }
+    }
+    
     // this->set_arguments(arguments);
     this->gen_loop_location();
     // this->gen_loop_location();
@@ -2661,131 +2956,7 @@ void polyfp::function::gen_c_code() const
     isl_printer_free(p);
     polyfp::str_dump("\n\n");
 }
-void polyfp::function::trans(){
-    
-    // This vector is used in generate_Halide_stmt_from_isl_node to figure
-    // out what are the statements that have already been visited in the
-    // AST tree.
-    std::vector<std::pair<std::string, std::string>> generated_stmts;
-    isl_ast_node *node=this->get_isl_ast();
 
-    const polyfp::function &fct =*this;
-    if (isl_ast_node_get_type(node) == isl_ast_node_for)
-    
-    {
-        DEBUG(3, polyfp::str_dump("Generating code for Halide::For"));
-        std::cout<<"isl_ast_node_for"<<std::endl;
-
-        isl_ast_expr *iter = isl_ast_node_for_get_iterator(node);
-        char *cstr = isl_ast_expr_to_C_str(iter);
-        std::string iterator_str = std::string(cstr);
-        std::cout<<"iterator_str"<<std::endl;
-        std::cout<<iterator_str<<std::endl;
-
-        isl_ast_expr *init = isl_ast_node_for_get_init(node);
-        isl_ast_expr *cond = isl_ast_node_for_get_cond(node);
-        isl_ast_expr *inc = isl_ast_node_for_get_inc(node);
-        isl_ast_node *body = isl_ast_node_for_get_body(node);
-        if (isl_ast_node_get_type(body) == isl_ast_node_block)
-        {
-            std::cout<<"111isl_ast_node_block"<<std::endl;
-        }else if (isl_ast_node_get_type(body) == isl_ast_node_user)
-        {
-            std::cout<<"111isl_ast_node_user"<<std::endl;
-        }else if (isl_ast_node_get_type(body) == isl_ast_node_for)
-        {
-            std::cout<<"111isl_ast_node_for"<<std::endl;
-        }
-
-
-        
-        std::cout<<(const char *)isl_ast_expr_to_C_str(init)<<std::endl;
-        std::cout<<(const char *)isl_ast_expr_to_C_str(cond)<<std::endl;
-        std::cout<<(const char *)isl_ast_expr_to_C_str(inc)<<std::endl;
-
-
-
-        polyfp::str_dump("\nCderf like code:\n");
-        isl_printer *p;
-        isl_ast_print_options *options;
-     
-        p = isl_printer_to_file(this->get_isl_ctx(), stdout);
-        p = isl_printer_set_output_format(p, ISL_FORMAT_C);
-        p = isl_printer_print_ast_node(p, this->get_isl_ast());
-        p=isl_ast_node_for_print(node,p,options);
-
-
-
-
-
-
-
-        //////////////////////////////
-        isl_val *inc_val = isl_ast_expr_get_val(inc);
-        if (!isl_val_is_one(inc_val)) {
-            ERROR("The increment in one of the loops is not +1."
-                                    "This is not supported by Halide", 1);
-        }
-        isl_val_free(inc_val);
-        //////////////////////////////////
-
-        
-
-
-
-
-        ////////////////////////////////////////////////////
-        isl_ast_expr *cond_upper_bound_isl_format = NULL;
-        if (isl_ast_expr_get_op_type(cond) == isl_ast_op_lt) {
-            cond_upper_bound_isl_format = isl_ast_expr_get_op_arg(cond, 1);
-        } else if (isl_ast_expr_get_op_type(cond) == isl_ast_op_le) {
-            // Create an expression of "1".
-            isl_val *one = isl_val_one(isl_ast_node_get_ctx(node));
-            // Add 1 to the ISL ast upper bound to transform it into a strinct bound.
-            cond_upper_bound_isl_format = isl_ast_expr_add(
-                    isl_ast_expr_get_op_arg(cond, 1),
-                    isl_ast_expr_from_val(one));
-        } else {
-            ERROR("The for loop upper bound is not an isl_est_expr of type le or lt", 1);
-        }
-        std::cout<<(const char *)isl_ast_expr_to_C_str(cond_upper_bound_isl_format)<<std::endl;
-        assert(cond_upper_bound_isl_format != NULL);
-        DEBUG(3, polyfp::str_dump("Creating for loop init expression."));
-        
-        //////////////////////////////////////////////////////////
-
-
-        if (isl_ast_expr_get_type(cond_upper_bound_isl_format) == isl_ast_expr_int)
-        {
-            isl_val *init_val = isl_ast_expr_get_val(init);
-            std::cout<<"int"<< std::endl;
-            std::cout<<isl_val_get_num_si(init_val)<< std::endl;
-            isl_val_free(init_val);
-        }
-        else if (isl_ast_expr_get_type(cond_upper_bound_isl_format) == isl_ast_expr_id)
-        {
-            isl_id *identifier = isl_ast_expr_get_id(init);
-            std::cout<<"name"<< std::endl;
-            std::string name_str(isl_id_get_name(identifier));
-            std::cout<<name_str;
-            isl_id_free(identifier);
-        
-        } else if (isl_ast_expr_get_type(cond_upper_bound_isl_format) == isl_ast_expr_op)
-        {   isl_ast_expr *expr0 = isl_ast_expr_get_op_arg(init, 0);
-            std::cout<<"name_str";
-        }
-		
-            isl_ast_expr_free(init);
-            isl_ast_expr_free(cond);
-            isl_ast_expr_free(inc);
-            isl_ast_node_free(body);
-            isl_ast_expr_free(cond_upper_bound_isl_format);
-    }else if (isl_ast_node_get_type(node) == isl_ast_node_block)
-    {
-        std::cout<<"isl_ast_node_block"<<std::endl;
-    }
-}
-  
        
 }
 

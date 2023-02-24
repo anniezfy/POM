@@ -45,6 +45,11 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/heat/heat.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/resnet/resnet.mlir\
+    --scalehls-func-preprocess="top-func=resnet" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/resnet/resnet.cpp
+
 ../scalehls/build/bin/scalehls-opt ../samples/blur/blur.mlir\
     --scalehls-func-preprocess="top-func=blur" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
@@ -115,16 +120,43 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/2mm/2mm.cpp
 
 
+../scalehls/build/bin/scalehls-opt ../samples/example/example.mlir\
+    --scalehls-func-preprocess="top-func=example" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/example/example.cpp
+
+
+../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
+    --scalehls-func-preprocess="top-func=bicg" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
+
 ../scalehls/build/bin/scalehls-opt ../samples/3mm/3mm.mlir\
     --scalehls-func-preprocess="top-func=3mm" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/3mm/3mm.cpp
 
 
-../scalehls/build/bin/scalehls-opt ../samples/3mm/3mm.mlir\
-    --scalehls-func-preprocess="top-func=3mm" \
+../scalehls/build/bin/scalehls-opt ../samples/edgeDetect/edgeDetect.mlir\
+    --scalehls-func-preprocess="top-func=edgeDetect" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/3mm/3mm.cpp
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/edgeDetect/edgeDetect.cpp
+
+
+../scalehls/build/bin/scalehls-opt ../samples/gaussian/gaussian.mlir\
+    --scalehls-func-preprocess="top-func=gaussian" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gaussian/gaussian.cpp
+
+../scalehls/build/bin/scalehls-opt ../samples/vgg/vgg.mlir\
+    --scalehls-func-preprocess="top-func=vgg" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/vgg/vgg.cpp
+
+../scalehls/build/bin/scalehls-opt ../samples/blur/blur.mlir\
+    --scalehls-func-preprocess="top-func=blur" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/blur/blur.cpp
 
 ../scalehls/build/bin/scalehls-opt ../samples/jacobi/jacobi.mlir\
     --scalehls-func-preprocess="top-func=jacobi" \
@@ -224,3 +256,10 @@ time /home/POM/scalehls/polygeist/build/bin/mlir-clang test_atax.c -function=tes
 time /home/POM/scalehls/build/bin/scalehls-opt test_atax.mlir -debug-only=scalehls \
 --scalehls-dse-pipeline="top-func=test_atax target-spec=../config.json" \
 | /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > test_atax.cpp
+
+
+time /home/POM/scalehls/polygeist/build/bin/mlir-clang vgg.c -function=vgg -S \
+-memref-fullrank -raise-scf-to-affine > vgg.mlir
+time /home/POM/scalehls/build/bin/scalehls-opt vgg.mlir \
+-scalehls-pytorch-pipeline-v2="top-func=vgg" \
+| /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > vgg.cpp

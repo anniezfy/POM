@@ -2068,7 +2068,7 @@ public:
         // this->etype = polyfp::e_var;
         // this->dtype = t;
         // global::get_implicit_function().add_invariant(*this);
-
+    // constant(float value = 0, polyfp::primitive_t t = p_float32, polyfp::function *fct = global::get_implicit_function());
     // };
     /**
       * Return the type of the elements of the placeholder.
