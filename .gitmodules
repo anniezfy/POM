@@ -1,6 +1,4 @@
-[submodule "scalehls"]
-	path = scalehls
-	url = git@github.com:Jason048/scalehls.git
+
   
 [submodule "isl"]
 	path = isl
