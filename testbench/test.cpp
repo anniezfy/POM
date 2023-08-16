@@ -28,18 +28,24 @@ int main(){
     init("3mm");
     auto *fct = global::get_implicit_function();
     var i("i", 0 ,32);
-    var j("j", 0 ,32);
-    var k("k", 0 ,32);
-    placeholder y("y",{32},p_float32);
-    placeholder x("x",{32},p_float32);
+    var j("j", 0 ,64);
+    var t("t", 0 ,128);
+    placeholder m("m",{32},p_float32);
+    placeholder n("n",{32},p_float32);
     constant scalar(0);
+    constant temp(0);
+    constant beta(0);
 
-    compute s_1("s_1",{i,j},scalar,x(i));
-    compute s_2("s_2",{k,i,j},scalar,x(i));
-    //step 1
-    s_2.after(s_1,2);
-    //step 2
-    // s_1.perfection();
+    compute S1("S1", {t,i}, n(i)*temp, m(i));
+    compute S2("S2", {j,i}, m(i)*beta, n(i));
+    // compute S3("S3", {i,i}, m(i)*beta, n(i));
+    var i0("i0"), j0("j0"),i1("i1"), j1("j1"),k0("k0"),k1("k1");
+    S2.after(S1,j);
+    // S3.after(S2,i);
+    // S1.tile(t, i, 1, 8, j0, i0, j1, i1);
+    // S1.pipeline(i0,1);
+    // S1.unroll(i1,-1);
+
 
 
     // s_1.after(s_2,k);
@@ -53,7 +59,7 @@ int main(){
     // s_1.interchange(i,j);
     
 
-    var i0("i0"), j0("j0"),i1("i1"), j1("j1"),k0("k0"),k1("k1");
+    // var i0("i0"), j0("j0"),i1("i1"), j1("j1"),k0("k0"),k1("k1");
     // s_3.after(s_2,-1);
     // s_4.after(s_3,-1);
     // s_5.after(s_4,-1);

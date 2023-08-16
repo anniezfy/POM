@@ -25,7 +25,7 @@
 using namespace std;
 using namespace polyfp;
 int main(){
-    init("sediel");
+    init("seidel");
     auto *fct = global::get_implicit_function();
     var i("i", 0 ,4094);
     var j("j", 0 ,4094);
@@ -57,16 +57,21 @@ int main(){
 
     // s_4.tile(i,j,1,4);
     
-    // s_4.pipeline(k,1);
+    // s_1.pipeline(j,1);
     // s_1.pipeline(j0,1);
     // A.partition({3,3},"cyclic");
 
     // A.partition({4,4},"cyclic");
     // s_2.after(s_1,j);
-    fct->auto_DSE("/home/POM/samples/sediel/");
+    fct->auto_DSE("/home/POM/samples/seidel/");
 
     // codegen();
     
 
     // fct->gen_c_code();
 }
+
+// ../scalehls/build/bin/scalehls-opt ../ablation/seidel/seidel.mlir\
+//     --scalehls-func-preprocess="top-func=seidel" \
+//     --scalehls-qor-estimation="target-spec=../samples/config.json" \
+//     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../ablation/seidel/seidel_LP_AP.cpp

@@ -31,22 +31,18 @@ void blur(
   #pragma HLS interface bram port=v1
   #pragma HLS interface bram port=v2
   #pragma HLS interface bram port=v3
-
   #pragma HLS array_partition variable=v1 cyclic factor=4 dim=1
   #pragma HLS array_partition variable=v1 cyclic factor=2 dim=2
   #pragma HLS array_partition variable=v1 cyclic factor=3 dim=3
   #pragma HLS resource variable=v1 core=ram_s2p_bram
-
   #pragma HLS array_partition variable=v2 cyclic factor=2 dim=1
   #pragma HLS array_partition variable=v2 cyclic factor=2 dim=2
   #pragma HLS array_partition variable=v2 cyclic factor=3 dim=3
   #pragma HLS resource variable=v2 core=ram_s2p_bram
-
   #pragma HLS array_partition variable=v3 cyclic factor=2 dim=1
   #pragma HLS array_partition variable=v3 cyclic factor=4 dim=2
   #pragma HLS array_partition variable=v3 cyclic factor=3 dim=3
   #pragma HLS resource variable=v3 core=ram_s2p_bram
-
   for (int v4 = 0; v4 < 2047; v4 += 1) {	// L6, [0,16760866), iterCycle=32, II=4
     for (int v5 = 0; v5 < 2047; v5 += 1) {	// L7, [16760865,16769083), iterCycle=32, II=4
       #pragma HLS pipeline II=1

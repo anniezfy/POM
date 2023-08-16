@@ -39,11 +39,11 @@ int main(){
     placeholder G("G",{4096,4096},p_float32);
     constant scalar(0);
     compute s_1("s_1",{i,j},scalar,E(i,j));
-    compute s_2("s_2",{k,i,j},E(i,j)+A(i,k)*B(k,j),E(i,j));
+    compute s_2("s_2",{i,j,k},E(i,j)+A(i,k)*B(k,j),E(i,j));
     compute s_3("s_3",{i,j},scalar,F(i,j));
-    compute s_4("s_4",{k,i,j},F(i,j)+C(i,k)*D(k,j),F(i,j));
+    compute s_4("s_4",{i,j,k},F(i,j)+C(i,k)*D(k,j),F(i,j));
     compute s_5("s_5",{i,j},scalar,G(i,j));
-    compute s_6("s_6",{k,i,j},G(i,j)+E(i,k)*F(k,j),G(i,j));
+    compute s_6("s_6",{i,j,k},G(i,j)+E(i,k)*F(k,j),G(i,j));
     var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
     s_2.after(s_1,-1);
     s_3.after(s_2,-1);

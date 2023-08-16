@@ -40,9 +40,9 @@ int main(){
     constant beta(3.7);
     constant scalar(3.7);
     compute s_1("s_1",{i,j},scalar,temp(i,j));
-    compute s_2("s_2",{k,i,j},temp(i,j)+alpha*A(i,k)*B(k,j),temp(i,j));
+    compute s_2("s_2",{i,j,k},temp(i,j)+alpha*A(i,k)*B(k,j),temp(i,j));
     compute s_3("s_3",{i,j},D(i,j)*beta,D(i,j));
-    compute s_4("s_4",{k,i,j},D(i,j)+temp(i,k)*C(k,j),D(i,j));
+    compute s_4("s_4",{i,j,k},D(i,j)+temp(i,k)*C(k,j),D(i,j));
     s_2.after(s_1,-1);
     s_3.after(s_2,-1);
     s_4.after(s_3,-1);
@@ -57,9 +57,9 @@ int main(){
     // s_4.unroll(i1,-1);
     // s_1.pipeline(j,1);
     // s_1.pipeline(j,1);
-    // s_2.pipeline(k0,1);
+    // s_2.pipeline(j,1);
     // s_3.pipeline(j,1);
-    // s_4.pipeline(k0,1);
+    // s_4.pipeline(j,1);
     // A.partition({16,1},"cyclic");
     // B.partition({1,2},"cyclic");
     // C.partition({1,2},"cyclic");
@@ -68,6 +68,10 @@ int main(){
     fct->auto_DSE("/home/POM/samples/2mm/");
     // codegen();
 }
+// ../scalehls/build/bin/scalehls-opt ../ablation/2mm/2mm.mlir\
+//     --scalehls-func-preprocess="top-func=2mm" \
+//     --scalehls-qor-estimation="target-spec=../samples/config.json" \
+//     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../ablation/2mm/2mm_LI_LP.cpp
 // C code:
 // for (int i = 0; i < N; i++) {
 //   for (int j = 0; j < N; j++) {

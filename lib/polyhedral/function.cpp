@@ -1179,15 +1179,15 @@ void function::gen_isl_ast()
                                 isl_union_map_to_str(umap)));
     DEBUG(3, polyfp::str_dump("\n"));
 
-    // polyfp::str_dump("Schedule:", isl_union_map_to_str(this->get_schedule()));
-    // polyfp::str_dump("Iteration domain:",
-    //                             isl_union_set_to_str(this->get_iteration_domain()));
-    // polyfp::str_dump("Trimmed Time-Processor domain:",
-    //                             isl_union_set_to_str(this->get_trimmed_time_processor_domain()));
-    // polyfp::str_dump("Trimmed Time-Processor aligned identity schedule:",
-    //                             isl_union_map_to_str(this->get_aligned_identity_schedules()))  ;        
-    // polyfp::str_dump("Identity schedule intersect trimmed Time-Processor domain:",
-    //                             isl_union_map_to_str(umap));    
+    polyfp::str_dump("Schedule:", isl_union_map_to_str(this->get_schedule()));
+    polyfp::str_dump("Iteration domain:",
+                                isl_union_set_to_str(this->get_iteration_domain()));
+    polyfp::str_dump("Trimmed Time-Processor domain:",
+                                isl_union_set_to_str(this->get_trimmed_time_processor_domain()));
+    polyfp::str_dump("Trimmed Time-Processor aligned identity schedule:",
+                                isl_union_map_to_str(this->get_aligned_identity_schedules()))  ;        
+    polyfp::str_dump("Identity schedule intersect trimmed Time-Processor domain:",
+                                isl_union_map_to_str(umap));    
     const char *s; 
     s = "[N,M,K] -> {s_2[i,j,k] -> [0, i, 0, j, 0, k, 10] : 0 <= i <= N and 0 <= j <= M and 0 <= k <= K; s_1[i, j, k] -> [0, i, 0, j, 0, k, 0] : 0 <= i <= N and 0 <= j <= M and 0 <= k <= 1 }";
     // s_2[0, i, 0, j, 0, k, 0] -> [0, i' = i, 0, j' = j, 0, k' = k, 0] : 0 <= i <= 4095 and 0 <= j <= 4095 and 0 <= k <= 4095; 
@@ -1524,6 +1524,7 @@ void polyfp::function::auto_DSE_loop_transformation(){
 
 }
 void polyfp::function::dump_schedule(std::string path){
+    std::cout<<"!!!!!"<<std::endl;
     for(auto &comp: this->get_body()){
         comp->iterators_location_map.clear();
         this->global_location = 0;
@@ -1543,8 +1544,9 @@ void polyfp::function::dump_schedule(std::string path){
     context.getOrLoadDialect<mlir::memref::MemRefDialect>();
     context.getOrLoadDialect<mlir::scalehls::HLSDialect>();
 
-    
+    std::cout<<"!!!!!222"<<std::endl;
     manager.mlirGen1(*this,this->get_isl_ast(),level,true, false, false);
+    std::cout<<"!!!!!333"<<std::endl;
     bool skew_flag = false;
     for(auto &comp : this->leader_computations){
         if(comp->is_skewed_inDSE == true){
@@ -1555,7 +1557,7 @@ void polyfp::function::dump_schedule(std::string path){
         // std::cout<<"position:";
         // std::cout<<position<<std::endl;
         // std::cout<<comp->get_name()<<std::endl;
-        // std::cout<<"index:";
+        std::cout<<"index:";
         // std::cout<<index<<std::endl;
         //TODO:
         for(auto &comp : this->leader_computations){
@@ -1605,7 +1607,7 @@ void polyfp::function::dump_schedule(std::string path){
                 // int loc = fct.leader_computation_index[comp];
                 // std::cout<<comp->unroll_dimension[i].get_name();
                 int loc = comp->iterators_location_map[comp->unroll_dimension[i].get_name()];
-                // std::cout<<"loc"<<std::endl;
+                std::cout<<"loc"<<std::endl;
                 // std::cout<<loc<<std::endl;
                 // loc = loc + bias;
                 if(comp->unroll_factor[i] != -1){
@@ -1835,7 +1837,7 @@ void polyfp::function::evaluate_func(){
             }
         }
         else{
-            std::cout<<"?????????"<<std::endl;
+            std::cout<<"evaluation initialization failed"<<std::endl;
         }
     }
 
@@ -2081,8 +2083,6 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
         if(range%32 != 0){
             not_2_pow = true;
             for(int i=2; i<range; i++){
-                // std::cout<<range<<std::endl;
-                // std::cout<<i<<std::endl;
                 if(range % i == 0){
                     std::cout<<"here"<<std::endl;
                     if(i == 2){
@@ -2363,6 +2363,11 @@ void polyfp::function::auto_DSE_tile_size(polyfp::compute *comp, int factor, std
                         comp->pipeline(k0,1);
                         comp->unroll(k1,-1);
                         comp->unroll(i1,-1);
+                    }
+                    if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]==1){
+                        comp->pipeline(k0,1);
+                        comp->unroll(k1,-1);
+                        // comp->unroll(i1,-1);
                     }
                     if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]==1){
                         int lower = stoi(iterator_map[temp_index+2].get_lower().to_str());

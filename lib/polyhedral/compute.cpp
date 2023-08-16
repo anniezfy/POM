@@ -253,7 +253,7 @@ void polyfp::compute::set_identity_schedule_based_on_iteration_domain()
     DEBUG(3, polyfp::str_dump("The following identity schedule is generated (setting schedule 0): "));
     DEBUG(3, polyfp::str_dump(isl_map_to_str(sched)));
     this->set_schedule(sched);
-    // polyfp::str_dump(isl_map_to_str(sched));
+    polyfp::str_dump(isl_map_to_str(sched));
     DEBUG(3, polyfp::str_dump("The identity schedule for the original computation is set."));
 
     DEBUG_INDENT(-4);
@@ -1676,9 +1676,9 @@ void compute::check_loop_interchange(){
                 std::cout<<"here22";
                 int top_level2 = 0;
                 for(auto &dim: waiting_list){
-                    std::cout<<"here33";
+                    // std::cout<<"here33";
                     int level = map.first->get_loop_level_number_from_dimension_name(dim);
-                    std::cout<<"here34";
+                    // std::cout<<"here34";
                     //TODO: Potential bugs here
                     map.first->interchange(top_level2,level);
                     int count = level-top_level2-1;
@@ -1800,7 +1800,7 @@ void compute::apply_opt_strategy(std::vector<int> tile_size){
         var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
 
         if(tile_size[0]<=64 && tile_size[1]<64 && tile_size[2]<64){
-            // std::cout<<"start tile1"<<std::endl;
+            std::cout<<"start tile1"<<std::endl;
             
             int temp_index = this->get_iteration_variables().size()-3;
             if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]==1){
@@ -1822,6 +1822,7 @@ void compute::apply_opt_strategy(std::vector<int> tile_size){
                 this->unroll(j1,-1);
             }
             if(tile_size[2]==1 && tile_size[1]==1 && tile_size[0]!=1){
+                std::cout<<"start tile2"<<std::endl;
                 this->pipeline(iterator_map[temp_index+2],1);
                 // comp->unroll(k1,-1);
                 // comp->unroll(j1,-1);
@@ -1840,6 +1841,11 @@ void compute::apply_opt_strategy(std::vector<int> tile_size){
                     this->pipeline(iterator_map[temp_index+1],1);
                     this->unroll(iterator_map[temp_index+2],-1);
                 }
+            }
+            if(tile_size[2]!=1 && tile_size[1]==1 && tile_size[0]==1){
+                this->pipeline(k0,1);
+                this->unroll(k1,-1);
+                // comp->unroll(i1,-1);
             }
             if(tile_size[2]==1 && tile_size[1]!=1 && tile_size[0]!=1){
                 int lower = stoi(iterator_map[temp_index+2].get_lower().to_str());

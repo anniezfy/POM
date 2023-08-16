@@ -32,43 +32,39 @@ int main(){
     s_2.after(s_1,-1);
     s_3.after(s_2,-1);
 
-  
+    // var f1("f1", 0 ,64);
+    // var y1("y1", 0 ,16); 
+    // var x1("x1", 0 ,16); 
+    // var fz1("fz1", 0 ,64);
+    // var fy1("fy1", 0 ,3);
+    // var fx1("fx1", 0 ,3);
+    // placeholder filter1("filter1",{64,64,3,3},p_float32);
+    // placeholder conv1("conv1",{2,64,16,16},p_float32);
+    // placeholder relu1("relu1",{2,64,16,16},p_float32);
+    // placeholder input2("input2",{2,64,18,18},p_float32);
 
+    // compute s_5("s_5",{n,f1,y1,x1},scalar,conv1(n,f1,y1,x1));
+    // compute s_6("s_6",{n,f1,y1,x1,fz1,fy1,fx1},conv1(n,f1,y1,x1)+filter1(f1,fz1,fy1,fx1)*relu(n,fz1,y1*2+fy1,x1*2+fx1),conv1(n,f1,y1,x1));
+    // compute s_7("s_7",{n,f1,y1,x1},conv1(n,f1,y1,x1),relu1(n,f1,y1,x1));
 
+    // s_5.after(s_3,-1);
+    // s_6.after(s_5,-1);
+    // s_7.after(s_6,-1);
 
-    var f1("f1", 0 ,64);
-    var y1("y1", 0 ,16); 
-    var x1("x1", 0 ,16); 
-    var fz1("fz1", 0 ,64);
-    var fy1("fy1", 0 ,3);
-    var fx1("fx1", 0 ,3);
-    placeholder filter1("filter1",{64,64,3,3},p_float32);
-    placeholder conv1("conv1",{2,64,16,16},p_float32);
-    placeholder relu1("relu1",{2,64,16,16},p_float32);
-    placeholder input2("input2",{2,64,18,18},p_float32);
-
-    compute s_5("s_5",{n,f1,y1,x1},scalar,conv1(n,f1,y1,x1));
-    compute s_6("s_6",{n,f1,y1,x1,fz1,fy1,fx1},conv1(n,f1,y1,x1)+filter1(f1,fz1,fy1,fx1)*relu(n,fz1,y1*2+fy1,x1*2+fx1),conv1(n,f1,y1,x1));
-    compute s_7("s_7",{n,f1,y1,x1},conv1(n,f1,y1,x1),relu1(n,f1,y1,x1));
-
-    s_5.after(s_3,-1);
-    s_6.after(s_5,-1);
-    s_7.after(s_6,-1);
-
-    var f2("f2", 0 ,128);
-    var y2("y2", 0 ,16); 
-    var x2("x2", 0 ,16); 
-    var fz2("fz2", 0 ,64);
-    var fy2("fy2", 0 ,3);
-    var fx2("fx2", 0 ,3);
-    // placeholder filter2("filter2",{128,64,3,3},p_float32);
-    placeholder rpool("rpool",{2,128,16,16},p_float32);
-    placeholder relu2("relu2",{2,128,16,16},p_float32);
-    // placeholder input3("input3",{2,128,18,18},p_float32);
-    compute s_9("s_9",{n,f2,y2,x2},scalar,rpool(n,f2,y2,x2));
-    compute s_10("s_10",{n,f2,y2,x2,fz2,fy2,fx2},relu1(n,fz2,y2+fy2,x2+fx2),rpool(n,f2,y2,x2));
-    s_9.after(s_7,-1);
-    s_10.after(s_9,-1);
+    // var f2("f2", 0 ,128);
+    // var y2("y2", 0 ,16); 
+    // var x2("x2", 0 ,16); 
+    // var fz2("fz2", 0 ,64);
+    // var fy2("fy2", 0 ,3);
+    // var fx2("fx2", 0 ,3);
+    // // placeholder filter2("filter2",{128,64,3,3},p_float32);
+    // placeholder rpool("rpool",{2,128,16,16},p_float32);
+    // placeholder relu2("relu2",{2,128,16,16},p_float32);
+    // // placeholder input3("input3",{2,128,18,18},p_float32);
+    // compute s_9("s_9",{n,f2,y2,x2},scalar,rpool(n,f2,y2,x2));
+    // compute s_10("s_10",{n,f2,y2,x2,fz2,fy2,fx2},relu1(n,fz2,y2+fy2,x2+fx2),rpool(n,f2,y2,x2));
+    // s_9.after(s_7,-1);
+    // s_10.after(s_9,-1);
 
 
     // var f3("f3", 0 ,128);
@@ -299,9 +295,9 @@ int main(){
     // fct->dump_schedule("/home/POM/samples/vgg/");
 
 
-    // fct->auto_DSE("/home/POM/samples/vgg/");
+    fct->auto_DSE("/home/POM/samples/vgg/");
     // fct->-auto_DSE_loop_transformation();
-    codegen();
+    // codegen();
     // fct->gen_c_code();
 }
 

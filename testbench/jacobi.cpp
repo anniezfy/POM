@@ -26,11 +26,14 @@ int main(){
     // s_2.unroll(j1,23);
     s_2.after(s_1,k);
 
-    fct->auto_DSE("/home/POM/samples/jacobi/");
-    // codegen();
+    // fct->auto_DSE("/home/POM/samples/jacobi/");
+    codegen();
     // fct->gen_c_code();
 }
-
+../scalehls/build/bin/scalehls-opt ../ablation/jacobi/jacobi.mlir\
+    --scalehls-func-preprocess="top-func=jacobi" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../ablation/jacobi/jacobi.cpp
 // C code:
 // for (k = 0; t < 1024; k++){
 //    for (i = 1; i < 1023; i++)

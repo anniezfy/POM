@@ -24,24 +24,27 @@ int main(){
     s_2.after(s_1,j);
 
     var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-    s_1.tile(i,j,1,32,i0, j0, i1, j1);
-    s_2.tile(i,j,1,32,i0, j0, i1, j1);
+    // s_1.tile(i,j,1,32,i0, j0, i1, j1);
+    // s_2.tile(i,j,1,32,i0, j0, i1, j1);
+    // s_1.unroll(j1,-1);
+    // s_2.unroll(j1,-1);
     // s_2.after(s_1,j1);
-    // s_1.pipeline(j0,1);
-    s_1.unroll(j1,-1);
-    s_2.unroll(j1,-1);
-    s_2.after(s_1,j1);
+    // s_1.pipeline(j,1);
     // s.partition({32},"cyclic");
     // q.partition({32},"cyclic");
     // A.partition({16,32},"cyclic");
 
     
-    // fct->auto_DSE("/home/POM/samples/bicg/");
-    codegen();
+    fct->auto_DSE("/home/POM/samples/bicg/");
+    // codegen();
     
     
     // fct->gen_c_code();
 }
+// ../scalehls/build/bin/scalehls-opt ../ablation/bicg/bicg.mlir\
+//     --scalehls-func-preprocess="top-func=bicg" \
+//     --scalehls-qor-estimation="target-spec=../samples/config.json" \
+//     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../ablation/bicg/bicg_LS_LI_LF_LP.cpp
 // C code:
 // for (int i = 0; i < N; i += 1) {
 //     for (int j = 0; j < N; j += 1) {

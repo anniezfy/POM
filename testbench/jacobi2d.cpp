@@ -27,12 +27,16 @@ int main(){
     // s_1.unroll(j1,23);
     // s_2.unroll(j1,23);
     s_2.after(s_1,k);
-
-    fct->auto_DSE("/home/POM/samples/jacobi2d/");
-    // codegen();
+    s_1.pipeline(j,1);
+    s_2.pipeline(j,1);
+    // fct->auto_DSE("/home/POM/samples/jacobi2d/");
+    codegen();
     // fct->gen_c_code();
 }
-
+// ../scalehls/build/bin/scalehls-opt ../ablation/jacobi2d/jacobi2d.mlir\
+//     --scalehls-func-preprocess="top-func=jacobi2d" \
+//     --scalehls-qor-estimation="target-spec=../samples/config.json" \
+//     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../ablation/jacobi2d/jacobi2d_LP.cpp
 // C code:
 // for (k = 0; t < 1024; k++){
 //    for (i = 1; i < 1023; i++)

@@ -76,7 +76,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
     isl_ast_node *node=isl_node;
     if (isl_ast_node_get_type(node) == isl_ast_node_for){
         isl_ast_expr *iter = isl_ast_node_for_get_iterator(node);
-        // std::cout<<"enter a for node"<<std::endl;
+        std::cout<<"enter a for node"<<std::endl;
         isl_id *identifier = isl_ast_expr_get_id(iter);
         std::string name_str(isl_id_get_name(identifier));
         name_map.insert(std::pair(level,name_str));
@@ -444,7 +444,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
 
         }
     }else if (isl_ast_node_get_type(node) == isl_ast_node_block){
-        // std::cout<<"enter a block node"<<std::endl;
+        std::cout<<"enter a block node"<<std::endl;
         isl_ast_node_list *list = isl_ast_node_block_get_children(node);
         int current_level = level;
         int children_number = isl_ast_node_list_n_ast_node(list);
@@ -510,7 +510,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
     }else if (isl_ast_node_get_type(node) == isl_ast_node_user)
     {
         bool flag = true;
-        // std::cout<<"enter a user node"<<std::endl;
+        std::cout<<"enter a user node"<<std::endl;
         isl_ast_expr *expr = isl_ast_node_user_get_expr(node);
         isl_ast_expr *arg = isl_ast_expr_get_op_arg(expr, 0);
         isl_id *id = isl_ast_expr_get_id(arg);
@@ -687,7 +687,7 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                 }
             }
         }
-        else if (polyfp_expr.get_expr_type() == polyfp::e_op && polyfp_expr.get_op_type() != polyfp::o_access ){            
+        else if (polyfp_expr.get_expr_type() == polyfp::e_op && polyfp_expr.get_op_type() != polyfp::o_access && polyfp_expr.get_op_type() != polyfp::o_max ){            
             // std::cout<<"We get a e_op here"<<std::endl;
             mlir::ValueRange indices = {};
             auto a = polyfp_expr.get_operand(0);
@@ -928,6 +928,8 @@ mlir::ModuleOp polyfp::MLIRGenImpl::mlirGen1(const polyfp::function &fct, isl_as
                     auto store1 = builder.create<mlir::AffineStoreOp>(builder.getUnknownLoc(), a, mem, placeholder_vr);
                 }   
             }
+        }else if(polyfp_expr.get_op_type() == polyfp::o_max){
+            std::cout<<"max!!!"<<std::endl;
         }
     }else if (isl_ast_node_get_type(node) == isl_ast_node_if){
         // std::cout<<"enter a if node"<<std::endl;
@@ -1182,7 +1184,7 @@ void polyfp::MLIRGenImpl::a_print_expr(polyfp::expr polyfp_expr, polyfp::compute
                             }
                         
                             index_flag = true;
-                    }
+                        }
                         
                         
                         else{
@@ -2370,6 +2372,7 @@ void gen_mlir(polyfp::function &fct, isl_ast_node *node, int &level){
     // module->dump();
     std::error_code error;
     std::string s = fct.get_name();
+    // std::string path = "/home/POM/ablation/"+s+"/"+s+".mlir";
     std::string path = "/home/POM/samples/"+s+"/"+s+".mlir";
     llvm::raw_fd_ostream os(path, error);
     os << *module;

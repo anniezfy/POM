@@ -2126,6 +2126,10 @@ expr value_cast(primitive_t tT, cT val) {
     }
 }
 
+
+
+
+
 /**
   * Returns an expression that casts \p e to \p tT.
   */
@@ -2221,5 +2225,6 @@ only_integral<T> operator<<(T val, const polyfp::expr &e)
 
 
 }
+
 
 #endif

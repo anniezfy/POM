@@ -35,26 +35,20 @@ void gaussian(
   #pragma HLS interface bram port=v3
   #pragma HLS interface bram port=v4
   #pragma HLS interface bram port=v5
-
   #pragma HLS array_partition variable=v1 cyclic factor=3 dim=1
   #pragma HLS array_partition variable=v1 cyclic factor=3 dim=2
   #pragma HLS array_partition variable=v1 cyclic factor=3 dim=3
   #pragma HLS resource variable=v1 core=ram_s2p_bram
-
   #pragma HLS resource variable=v2 core=ram_s2p_bram
-
   #pragma HLS resource variable=v3 core=ram_s2p_bram
-
   #pragma HLS array_partition variable=v4 cyclic factor=3 dim=1
   #pragma HLS array_partition variable=v4 cyclic factor=3 dim=2
   #pragma HLS array_partition variable=v4 cyclic factor=3 dim=3
   #pragma HLS resource variable=v4 core=ram_s2p_bram
-
   #pragma HLS array_partition variable=v5 cyclic factor=3 dim=1
   #pragma HLS array_partition variable=v5 cyclic factor=3 dim=2
   #pragma HLS array_partition variable=v5 cyclic factor=3 dim=3
   #pragma HLS resource variable=v5 core=ram_s2p_bram
-
   for (int v6 = 0; v6 < 1363; v6 += 1) {	// L5, [0,1857771), iterCycle=1, II=1
     for (int v7 = 0; v7 < 1363; v7 += 1) {	// L6, [78026324,78027689), iterCycle=1, II=1
       #pragma HLS pipeline II=1

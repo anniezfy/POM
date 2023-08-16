@@ -77,6 +77,11 @@ isl_map *add_eq_to_schedule_map(int dim0, int in_dim_coefficient, int out_dim_co
                                 int const_conefficient, isl_map *sched);
 
 
+// polyfp::expr pmax(polyfp::expr left, polyfp::expr right){
+//     return expr(polyfp::o_max, left, right);
+// }
+
+
 }
 
 
