@@ -8,7 +8,10 @@
 // #include <isl/schedule.h>
 // #include <isl/schedule_node.h>
 // #include <isl/space.h>
+// #include <unordered_map>
+#include<algorithm>
 
+#include <map>
 // #include <map>
 #include <unordered_map>
 #include <vector>
@@ -84,6 +87,7 @@ public:
         static int counter = 0;
         return "C" + std::to_string(counter++);
     }
+
 
     /**
       * Return the implicit function created during polyfp initialization.
@@ -168,6 +172,7 @@ class expr
     friend class sync;
     friend class computation;
     friend class generator;
+    friend class p_max;
 
     /**
       * The type of the operator.
@@ -1325,6 +1330,51 @@ public:
         }
     }
 
+    // void update_index(std::map<std::string, std::string > temp_access_map) 
+    // {   
+    //     auto temp_map =  temp_access_map;
+    //     if (this->get_expr_type() != e_none)
+    //     {
+
+    //         switch (this->etype)
+    //         {
+    //         case polyfp::e_op:
+    //         {
+    //             if (this->get_n_arg() > 0)
+    //             {
+    //                 for (int i = 0; i < this->get_n_arg(); i++)
+    //                 {
+    //                     std::cout << "Operand " << std::to_string(i) << "." << std::endl;
+    //                     this->op[i].update_index(temp_map);
+    //                 }
+    //             }
+    //             if ((this->get_op_type() == polyfp::o_access))
+    //             {
+    //                 std::cout << "Access to " +  this->get_name() + ". Access expressions:" << std::endl;
+    //                 for (const auto &e : this->get_access())
+    //                 {
+    //                     e.update_index(temp_map);
+    //                 }
+    //             }
+    //             break;
+    //         }
+    //         case (polyfp::e_var):
+    //         {   
+                
+    //             this->set_name(temp_map[this->get_name()]) << std::endl;
+    //             std::cout << "Expression value type:" << str_from_polyfp_type_primitive(this->dtype) << std::endl;
+    //             break;
+    //         }
+
+    //         }
+            
+    //     }
+    //     else
+    //     {   std::cout << "dump expression"<<std::endl;
+    //         // std::cout << this->to_str();
+    //     }
+        
+    // }
     /**
       * Return true if this expression is a literal constant (i.e., 0, 1, 2, ...).
       **/
@@ -2078,6 +2128,84 @@ public:
 
     
 };
+
+class p_max: public polyfp::expr
+{
+    friend compute;
+    friend function;
+private:
+    expr left_value;
+    expr right_value;
+    // float float_value;
+    // polyfp::primitive_t datatype;
+    polyfp::function *func;
+    // polyfp::op_t _operator = polyfp::o_max;
+    
+public:
+
+    // constant(int value, polyfp::primitive_t t = p_int64, polyfp::function *func = global::get_implicit_function()){
+    //     this->value = expr((int64_t) value);
+    //     this->name = std::to_string(value);
+    //     this->etype = polyfp::e_var;
+    //     this->dtype = t;
+    //     this->func = func;
+    // };
+    p_max( polyfp::expr value1, polyfp::expr value2, polyfp::op_t o = polyfp::o_max, polyfp::function *fct = global::get_implicit_function());
+        // this->value = expr((float) value);
+        // this->name = std::to_string(value);
+        // this->etype = polyfp::e_var;
+        // this->dtype = t;
+        // global::get_implicit_function().add_invariant(*this);
+    // constant(float value = 0, polyfp::primitive_t t = p_float32, polyfp::function *fct = global::get_implicit_function());
+    // };
+    /**
+      * Return the type of the elements of the placeholder.
+      */
+    // polyfp::primitive_t get_type() const;
+
+
+    
+};
+
+
+
+// class p_max: public polyfp::expr
+// {
+//     friend compute;
+//     friend function;
+//     // friend generator;
+
+// private:
+
+//     /**
+//       * The sizes of the dimensions of the placeholder.  Assuming the following
+//       * placeholder buf[N0][N1][N2], dim_sizes should be {N0, N1, N2}.
+//       */
+    
+
+//     polyfp::function *fct;
+
+//     std::string name = generate_new_p_operator_name();
+
+//     polyfp::primitive_t type;
+
+
+// // protected:
+
+// public:
+//     std::vector<polyfp::expr> arg_list;
+
+//     p_max();
+
+//     p_max(polyfp::expr expr1, polyfp::expr expr2);
+    
+//     int get_n_args() const;
+
+//     const std::string &get_name() const;
+
+
+// };
+
 
 
 

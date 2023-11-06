@@ -155,6 +155,21 @@ polyfp::primitive_t constant::get_type() const
     return dtype;
 }
 
+
+polyfp::p_max::p_max(polyfp::expr value1, polyfp::expr value2, polyfp::op_t o, polyfp::function *fct){
+
+        this->left_value = value1;
+        this->right_value = value2;
+        this->func = fct;
+        this->_operator = o;
+        this->etype = polyfp::e_op;
+        this->op.push_back(value1);
+        this->op.push_back(value2);
+        // fct->add_invariant(*this);
+        // fct->add_invariant(std::pair<std::string, polyfp::constant *>(name, this));
+
+}
+
 polyfp::expr polyfp::expr::copy() const
 {
     return (*this);

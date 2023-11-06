@@ -116,7 +116,8 @@ public:
     std::map<std::string,int> array_map;
     std::map<std::string,mlir::Value> get_argument_map();
     std::map<std::string,int> get_array_map();
-
+    std::vector<mlir::Value> values;
+    
     std::vector<mlir::memref::AllocOp> allocs;
     std::vector<mlir::FuncOp> funcs;
     std::vector<mlir::FuncOp> get_funcs();
@@ -132,14 +133,14 @@ public:
     // SmallVector<mlir::AffineExpr> index_args;
     int get_iterator_location_from_name(polyfp::compute *comp,polyfp::expr polyfp_expr, std::vector<mlir::Value> &index_values);
     mlir::AffineExpr a_print_index(polyfp::expr polyfp_expr, polyfp::compute *comp, std::vector<mlir::Value> &index_values,int level);
-    std::vector<mlir::arith::AddFOp> add_op;
-    // std::vector<mlir::Op<>> sum_op;
-    std::vector<mlir::arith::MulFOp> mul_op;
+    // std::vector<mlir::arith::AddFOp> add_op;
+    // // std::vector<mlir::Op<>> sum_op;
+    // std::vector<mlir::arith::MulFOp> mul_op;
     
 
-    std::vector<mlir::arith::AddFOp> all_add_op;
-    std::vector<mlir::arith::MulFOp> all_mul_op;
-    using value = std::variant<mlir::arith::AddFOp, mlir::arith::MulFOp,mlir::arith::SubFOp,mlir::arith::DivFOp>;
+    // std::vector<mlir::arith::AddFOp> all_add_op;
+    // std::vector<mlir::arith::MulFOp> all_mul_op;
+    using value = std::variant<mlir::arith::AddFOp, mlir::arith::MulFOp,mlir::arith::SubFOp,mlir::arith::DivFOp,mlir::arith::MaxFOp>;
     std::vector<value> current_op;
     std::vector<value> all_current_op;
 

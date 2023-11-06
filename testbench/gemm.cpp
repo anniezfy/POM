@@ -25,7 +25,7 @@
 using namespace std;
 using namespace polyfp;
 int main(){
-    init("gemm");
+    init("gemm_4096");
     auto fct = global::get_implicit_function();
     var i("i", 0 ,4096);
     var j("j", 0 ,4096);
@@ -33,8 +33,8 @@ int main(){
     placeholder A("A",{4096,4096},p_float32);
     placeholder B("B",{4096,4096},p_float32);
     placeholder C("C",{4096,4096},p_float32);
-    placeholder D("D",{4096,4096},p_float32);
-    placeholder E("E",{4096,4096},p_float32);
+    // placeholder D("D",{32,32},p_float32);
+    // placeholder E("E",{32,32},p_float32);
     constant alpha;
     constant beta;
     compute s_1("s_1",{i,j},C(i,j)*beta,C(i,j));
@@ -61,8 +61,8 @@ int main(){
     // C.partition({16,2},"cyclic");
     // codegen();
     
-    // fct->auto_DSE("/home/POM/samples/gemm/");
-    codegen();
+    fct->auto_DSE("/home/POM/samples/gemm/");
+    // codegen();
 
 }
 // ../scalehls/build/bin/scalehls-opt ../ablation/gemm/gemm.mlir\

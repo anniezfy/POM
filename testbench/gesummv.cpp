@@ -25,16 +25,16 @@
 using namespace std;
 using namespace polyfp;
 int main(){
-    init("gesummv");
+    init("gesummv_8192");
     auto *fct = global::get_implicit_function();
-    var i("i", 0 ,4096);
-    var j("j", 0 ,4096);
-    var k("k", 0 ,4096);
-    placeholder temp("temp",{4096},p_float32);
-    placeholder A("A",{4096,4096},p_float32);
-    placeholder B("B",{4096,4096},p_float32);
-    placeholder x("x",{4096},p_float32);
-    placeholder y("y",{4096},p_float32);
+    var i("i", 0 ,8192);
+    var j("j", 0 ,8192);
+    var k("k", 0 ,8192);
+    placeholder temp("temp",{8192},p_float32);
+    placeholder A("A",{8192,8192},p_float32);
+    placeholder B("B",{8192,8192},p_float32);
+    placeholder x("x",{8192},p_float32);
+    placeholder y("y",{8192},p_float32);
     constant alpha(1.6);
     constant beta(3.7);
         // compute s_1("s_1",{i,j},alpha,temp(i));

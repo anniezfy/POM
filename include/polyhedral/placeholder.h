@@ -16,6 +16,12 @@
 namespace polyfp{
   class compute;
 
+static std::string generate_new_p_operator_name()
+{
+    static int counter = 0;
+    return "p" + std::to_string(counter++);
+}
+
 
 class placeholder
 {
@@ -154,6 +160,13 @@ public:
 
 
 };
+
+
+
+
+
+
+
 }
 
 

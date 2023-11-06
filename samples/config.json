@@ -17,7 +17,7 @@
     "resource_constr": true,
     "frequency": "100MHz",
     "dsp": 220,
-    "bram": 280,
+    "bram": 180,
     "dsp_usage": {
         "fadd": 2,
         "fmul": 3,

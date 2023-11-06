@@ -153,6 +153,8 @@ private:
 
     std::vector<polyfp::expr> placeholder_dims;
     std::vector<polyfp::expr > placeholder_accessmap;
+    
+    
 
 
 
@@ -500,6 +502,7 @@ public:
     int II;
     bool is_unrolled;
     long latency;
+    long best_latency = 999999999999999;
     int dsp;
     int minII;
         /**
@@ -520,6 +523,9 @@ public:
     std::vector<int> unroll_factor;
     std::vector<polyfp::expr> unroll_dimension;
 
+    bool refused = false;
+    std::map<std::string, std::string > temp_access_map;
+
 
     isl_map * best_schedule;
     std::map<std::string, std::string > best_tile_map;
@@ -532,6 +538,7 @@ public:
 
     std::map<std::string, int>iterators_location_map;
     int after_level;
+    int ori_after_level;
 
 
     /**
@@ -567,7 +574,7 @@ public:
     bool is_pipelined = false;
     // bool is_first_opt = false;
     int current_factor = 1;
-    int largest_factor =2;
+    int largest_factor = 2;
     std::string iterator_to_skew;
     std::string iterator_to_modify;
     int skew_factor;
@@ -649,6 +656,7 @@ public:
 
     std::vector<polyfp::expr> get_placeholder_dims();
 
+    void set_placeholder_dims(std::vector<polyfp::expr> temp);
         /**
       * Get the number of loop levels.
       */
@@ -1000,7 +1008,7 @@ public:
     std::vector<polyfp::expr> get_loads();
     void get_loads_stores();
     void get_all_loadstores();
-    void auto_loop_transofrmation();
+    void auto_loop_transformation();
     void compute_dependence_vectors();
     std::unordered_map<std::string, polyfp::expr *> load_map;
     std::unordered_map<std::string, polyfp::expr *> store_map;
@@ -1020,6 +1028,7 @@ public:
     bool is_skewed_inDSE = false;
     std::vector<int> final_strategy;
     std::vector<int> current_strategy;
+    std::vector<int> temp_strategy;
 
 
 

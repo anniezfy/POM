@@ -137,6 +137,16 @@ private:
       */
     std::map<std::string, polyfp::placeholder *> placeholders_list;
 
+    std::map<std::string, polyfp::placeholder *> fct_argument_list;
+
+    std::map<std::string, polyfp::placeholder *> global_argument_list;
+    // global
+    
+
+    // std::map<std::string, polyfp::placeholder *> global_argument_list;
+
+    bool fct_argument_added = false;
+
 
 
     /**
@@ -282,7 +292,7 @@ protected:
 
     isl_ast_node *best_ast;
 
-    void dfs(int pos, int top, int end, int map[100][100], int n, int v[100],int stack[120]);
+    void dfs(int pos, int top, int end, int map[500][500], int n, int v[500],int stack[550]);
     polyfp::compute * update_latency();
     int get_longest_path();
     int get_longest_node(std::vector<long> path);
@@ -304,6 +314,8 @@ protected:
       * to the buffer.
       */
     void add_placeholder(std::pair<std::string, polyfp::placeholder *> buf);
+
+
 
 
     /**
@@ -484,6 +496,17 @@ public:
     std::map<int,std::vector<int>> path_map;
     std::vector<std::vector<long>> paths;
     std::vector<std::string> finish_list;
+    bool consistent_flag = true;
+    bool refused = false;
+
+
+    void add_fct_argument(std::pair<std::string, polyfp::placeholder *> buf);
+
+    void add_fct_argument();
+
+    void add_global_argument(std::pair<std::string, polyfp::placeholder *> buf);
+
+    void check_loop_fusion();
 
     int get_global_location(){
         return global_location;
@@ -497,11 +520,12 @@ public:
 
     long longest_path;
     long longest_node;
-    int dsp_max;
-    int dsp_usage;
-    int best_dsp_usage = 99999;
+    long dsp_max;
+    long dsp_usage;
+    long best_dsp_usage = dsp_max;
     long best_latency;
     long current_latency;
+    bool new_strategy = true;
     polyfp::compute * current_opt_comp;
 
 
@@ -546,6 +570,8 @@ public:
       * The names of the buffers are used as a key for the map.
       */
     const std::map<std::string, polyfp::placeholder *> &get_placeholders() const;
+    const std::map<std::string, polyfp::placeholder *> &get_fct_arguments() const;
+    const std::map<std::string, polyfp::placeholder *> &get_global_arguments() const;
         /**
       * Return a vector representing the invariants of the function
       * (symbolic constants or variables that are invariant to the

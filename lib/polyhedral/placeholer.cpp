@@ -9,9 +9,17 @@ polyfp::placeholder::placeholder(std::string name, std::vector<int64_t> dim_size
                          dim_sizes(dim_sizes), fct(fct),
                          name(name), type(type)
 {
-
-    fct->add_placeholder(std::pair<std::string, polyfp::placeholder *>(name, this));
-};
+    if(fct->fct_argument_added == false){
+        // std::cout<<"false"<<std::endl;
+        fct->add_fct_argument(std::pair<std::string, polyfp::placeholder *>(name, this));
+        fct->add_placeholder(std::pair<std::string, polyfp::placeholder *>(name, this));
+    }else{
+        // std::cout<<"true"<<std::endl;
+        fct->add_global_argument(std::pair<std::string, polyfp::placeholder *>(name, this));
+        fct->add_placeholder(std::pair<std::string, polyfp::placeholder *>(name, this));
+    }   
+    
+}
 
 void placeholder::partition(std::vector<int> factors, std::string type){
     //TODO"CHECK DIMENSIONS AND WARNING
@@ -26,11 +34,8 @@ void placeholder::partition(std::vector<int> factors, std::string type){
 void placeholder::partition(std::vector<int> factors, std::vector<std::string> types){
     //TODO"CHECK DIMENSIONS AND WARNING
     this->fct->set_partition(this->get_name(),factors,types);
-    
 
 }
-
-
 
 /**
   * Return the name of the buffer.
@@ -96,6 +101,21 @@ void polyfp::placeholder::dump(bool exhaustive) const
         std::cout << std::endl << std::endl;
     }
 }
+// const std::string &p_max::get_name() const
+// {
+//     return name;
+// }
+// polyfp::p_max::p_max(polyfp::expr expr1, polyfp::expr expr2)
+// {
+
+//     this->arg_list.push_back(expr1);
+//     this->arg_list.push_back(expr2);
+// }
+
+// int p_max::get_n_args() const
+// {
+//     return this->arg_list.size();
+// }
 
 
 }

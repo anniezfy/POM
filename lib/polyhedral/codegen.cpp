@@ -203,6 +203,8 @@ polyfp::expr traverse_expr_and_replace_non_affine_accesses(polyfp::compute *comp
 
         switch (exp.get_op_type())
         {
+            std::cout<<exp.get_op_type()<<std::endl;
+            std::cout<<exp.get_op_type()<<std::endl;
             case polyfp::o_minus:
             case polyfp::o_logical_not:
             case polyfp::o_floor:

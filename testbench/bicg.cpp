@@ -18,8 +18,8 @@ int main(){
 
 
     compute s_1("s_1",{i,j},s(j)+A(i,j)*r(i),s(j));
-    // compute s_2("s_2",{i,j},q(i)+A(i,j)*p(j),q(i));
-    compute s_2("s_2",{i,j},q(j)+A(j,i)*p(i),q(j));
+    compute s_2("s_2",{i,j},q(i)+A(i,j)*p(j),q(i));
+    // compute s_2("s_2",{i,j},q(j)+A(j,i)*p(i),q(j));
     // s_2.interchange(i,j);
     s_2.after(s_1,j);
 
@@ -32,7 +32,11 @@ int main(){
     // s_1.pipeline(j,1);
     // s.partition({32},"cyclic");
     // q.partition({32},"cyclic");
-    // A.partition({16,32},"cyclic");
+    // A.partition({16,16},"cyclic");
+
+    // fct->auto_DSE_loop_transformation();
+
+    // fct->dump_schedule("/home/POM/samples/bicg/");
 
     
     fct->auto_DSE("/home/POM/samples/bicg/");

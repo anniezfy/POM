@@ -25,17 +25,17 @@
 using namespace std;
 using namespace polyfp;
 int main(){
-    init("2mm");
+    init("2mm_8192");
 
     auto *fct = global::get_implicit_function();
-    var i("i", 0 ,4096);
-    var j("j", 0 ,4096);
-    var k("k", 0 ,4096);
-    placeholder A("A",{4096,4096},p_float32);
-    placeholder B("B",{4096,4096},p_float32);
-    placeholder C("C",{4096,4096},p_float32);
-    placeholder D("D",{4096,4096},p_float32);
-    placeholder temp("temp",{4096,4096},p_float32);
+    var i("i", 0 ,8192);
+    var j("j", 0 ,8192);
+    var k("k", 0 ,8192);
+    placeholder A("A",{8192,8192},p_float32);
+    placeholder B("B",{8192,8192},p_float32);
+    placeholder C("C",{8192,8192},p_float32);
+    placeholder D("D",{8192,8192},p_float32);
+    placeholder temp("temp",{8192,8192},p_float32);
     constant alpha(1.6);
     constant beta(3.7);
     constant scalar(3.7);
@@ -46,8 +46,8 @@ int main(){
     s_2.after(s_1,-1);
     s_3.after(s_2,-1);
     s_4.after(s_3,-1);
-    var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
-    // s_2.tile(k,j,i,1,2,16,i0, j0, k0, i1, j1,k1);
+    // var i0("i0"), j0("j0"),k0("k0"), i1("i1"), j1("j1"),k1("k1");
+    // s_2.tile(k,i,j,1,2,16,i0, j0, k0, i1, j1,k1);
     // s_4.tile(k,j,i,1,2,16,i0, j0, k0, i1, j1,k1);
     // s_2.unroll(k1,-1);
     // s_2.unroll(j1,-1);
@@ -65,6 +65,26 @@ int main(){
     // C.partition({1,2},"cyclic");
     // D.partition({16,2},"cyclic");
     // temp.partition({16,2},"cyclic");
+    // fct->auto_DSE_loop_transformation();
+    // int count=0;
+    // for(auto &comp: fct->leader_computations){
+    //     auto iterators = comp->get_iteration_variables();
+    //     int size = iterators.size();
+    //     if(size>=3){
+    //       // std::cout<< "comp->final_strategy.size()"<<std::endl;
+    //       comp->apply_opt_strategy({1,16,16});
+    //     }
+    //     if(size==2){
+    //       // std::cout<< "comp->final_strategy.size()"<<std::endl;
+    //       if(count!=0){
+    //           comp->apply_opt_strategy({1,8,16});
+    //           count+=1;
+    //       }
+    //       count+=1;
+          
+    //     }
+    // }
+    // fct->dump_schedule("/home/POM/sample_l/2mm/");
     fct->auto_DSE("/home/POM/samples/2mm/");
     // codegen();
 }

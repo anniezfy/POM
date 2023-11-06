@@ -4,7 +4,7 @@ MLIR_DIR=/home/POM/scalehls/build/lib/cmake/mlir \
 cmake -G Ninja .. \
 -DMLIR_DIR=/home/POM/scalehls/build/lib/cmake/mlir \
 -DLLVM_EXTERNAL_LIT=/home/POM/scalehls/build/bin/llvm-lit
-cmake --build . --target test
+cmake --build . --target test_max
 cmake --build . --target wrapper
 
 seidel: loop pipelining 
@@ -22,7 +22,18 @@ jacobi2d: 手动给两个subloop加pipeline失败
     --scalehls-legalize-to-hlscpp="top-func=bicg" \
     --cse -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg.cpp
+
+../scalehls/build/bin/scalehls-opt ../samples/vgg16-base/vgg16-base.mlir\
+    --scalehls-legalize-to-hlscpp="top-func=vgg16-base" \
+    --cse -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    
+
+    ../scalehls/build/bin/scalehls-opt ../samples/test_max/test_max.mlir\
+    --scalehls-legalize-to-hlscpp="top-func=test_max" \X
+    --cse -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/test_max.cpp
 
 
 ../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
@@ -33,20 +44,32 @@ jacobi2d: 手动给两个subloop加pipeline失败
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
+    --scalehls-reduce-initial-interval \
+    --scalehls-simplify-memref-access \
+    --scalehls-materialize-reduction \
+    --scalehls-promote-buffer \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
 
-../scalehls/build/bin/scalehls-opt ../samples/bicg.mlir\
+
+../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
     -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg_temp.cpp
 
 
+../scalehls/build/bin/scalehls-opt ../samples/test/test.mlir\
+    -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/test/test.cpp
 
 mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
 
-../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
-    --scalehls-func-preprocess="top-func=bicg" \
+../scalehls/build/bin/scalehls-opt ../samples/vgg16-base/vgg16-base.mlir\
+    --scalehls-func-preprocess="top-func=vgg16-base" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/vgg16-base/vgg16-base.cpp
 
 ../scalehls/build/bin/scalehls-opt ../samples/heat/heat.mlir\
     --scalehls-func-preprocess="top-func=heat" \
@@ -58,10 +81,20 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/resnet/resnet.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/resnet18_test/resnet18_test.mlir\
+    --scalehls-func-preprocess="top-func=resnet18_test" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/resnet18_test/resnet18_test.cpp
+
 ../scalehls/build/bin/scalehls-opt ../samples/blur/blur.mlir\
     --scalehls-func-preprocess="top-func=blur" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/blur/blur.cpp
+
+../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm_4096.mlir\
+    --scalehls-func-preprocess="top-func=gemm_4096" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
 
 
 
@@ -100,7 +133,11 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/test/test.cpp
 
-
+../scalehls/build/bin/scalehls-opt ../samples/test_max/test_max.mlir\
+    --scalehls-func-preprocess="top-func=test_max" \
+    --cse -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/test_max/test_max.cpp
 
 ../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm.mlir\
     --scalehls-func-preprocess="top-func=gemm" \
@@ -108,14 +145,35 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm.cpp
 
+../scalehls/build/bin/scalehls-opt ../sample_l/gemm/gemm.mlir\
+    --scalehls-func-preprocess="top-func=gemm" \
     --cse -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../sample_l/gemm/gemm.cpp
 
-
-../scalehls/build/bin/scalehls-opt ../samples/gesummv/gesummv.mlir\
-    --scalehls-func-preprocess="top-func=gesummv" \
+../scalehls/build/bin/scalehls-opt ../sample_l/2mm/2mm.mlir\
+    --scalehls-func-preprocess="top-func=2mm" \
+    --cse -canonicalize \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gesummv/gesummv.cpp
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../sample_l/2mm/2mm.cpp
+
+../scalehls/build/bin/scalehls-opt ../sample_l/3mm/3mm.mlir\
+    --scalehls-func-preprocess="top-func=3mm" \
+    --cse -canonicalize \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../sample_l/3mm/3mm.cpp
+
+
+../scalehls/build/bin/scalehls-opt ../samples/gemm/gemm_8192.mlir\
+    --scalehls-func-preprocess="top-func=gemm_8192" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/gemm/gemm_8192.cpp
+
+../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
+    --scalehls-func-preprocess="top-func=bicg" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg_test.cpp
+
 
 ../scalehls/build/bin/scalehls-opt ../samples/gemver/gemver.mlir\
     --scalehls-func-preprocess="top-func=gemver" \
@@ -127,6 +185,11 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/2mm/2mm.cpp
 
+../scalehls/build/bin/scalehls-opt ../samples/3mm/3mm_32.mlir\
+    --scalehls-func-preprocess="top-func=3mm_32" \
+    --scalehls-qor-estimation="target-spec=../samples/config.json" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/3mm/3mm_32.cpp
+
 
 ../scalehls/build/bin/scalehls-opt ../samples/example/example.mlir\
     --scalehls-func-preprocess="top-func=example" \
@@ -134,10 +197,10 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/example/example.cpp
 
 
-../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg.mlir\
-    --scalehls-func-preprocess="top-func=bicg" \
+../scalehls/build/bin/scalehls-opt ../samples/bicg/bicg_32.mlir\
+    --scalehls-func-preprocess="top-func=bicg_32" \
     --scalehls-qor-estimation="target-spec=../samples/config.json" \
-    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg.cpp
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/bicg/bicg_32.cpp
 
 ../scalehls/build/bin/scalehls-opt ../samples/3mm/3mm.mlir\
     --scalehls-func-preprocess="top-func=3mm" \
@@ -190,6 +253,11 @@ mlir::scalehls::applyFuncPreprocess(manager.get_funcs()[0], true);
 ../scalehls/build/bin/scalehls-opt ../samples/sediel/sediel.mlir\
     --scalehls-func-preprocess="top-func=sediel" \
     | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/sediel/sediel.cpp
+
+
+../scalehls/build/bin/scalehls-opt ../samples/example/mobilenettmp.mlir\
+    --scalehls-func-preprocess="top-func=mobilenettmp" \
+    | ../scalehls/build/bin/scalehls-translate -emit-hlscpp >  ../samples/example/mobilenettmp.cpp
 
     --scalehls-reduce-initial-interval \
     --scalehls-simplify-memref-access \
@@ -276,3 +344,28 @@ time /home/POM/scalehls/polygeist/build/bin/mlir-clang vgg.c -function=vgg -S \
 time /home/POM/scalehls/build/bin/scalehls-opt vgg.mlir \
 -scalehls-pytorch-pipeline-v2="top-func=vgg" \
 | /home/POM/scalehls/build/bin/scalehls-translate -emit-hlscpp > vgg.cpp
+
+
+
+Large:
+scalehls:
+"max_init_parallel": 32,  The maximum loop parallelism in the initial stage
+"max_expl_parallel": 32, The maximum loop parallelism in the exploration
+"max_loop_parallel": 16, The maximum unroll factor of each loop
+
+POM:
+"max_init_parallel": 32,  The maximum loop parallelism in the initial stage
+"max_expl_parallel": 32, The maximum loop parallelism in the exploration
+"max_loop_parallel": 32, The maximum unroll factor of each loop
+
+Small:
+scalehls:
+"max_init_parallel": 32,  The maximum loop parallelism in the initial stage
+"max_expl_parallel": 32, The maximum loop parallelism in the exploration
+"max_loop_parallel": 16, The maximum unroll factor of each loop
+
+POM:
+"max_init_parallel": 16,  The maximum loop parallelism in the initial stage
+"max_expl_parallel": 32, The maximum loop parallelism in the exploration
+"max_loop_parallel": 16, The maximum unroll factor of each loop for three inner-most loops
+"max_loop_parallel": 32, The maximum unroll factor of each loop for two inner-most loops
